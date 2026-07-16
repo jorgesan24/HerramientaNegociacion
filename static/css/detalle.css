@@ -1,0 +1,334 @@
+/*==============================================================
+DETALLE FACTURACIÓN - VARIABLES Y BASE
+==============================================================*/
+:root {
+    --azul: #1565C0;
+    --azul-hover: #2A69C7;
+    --azul-claro: #EDF5FF;
+    --gris: #DCE7F5;
+    --texto: #35506E;
+    --blanco: #FFFFFF;
+}
+
+.detalle-body {
+    margin: 0;
+    padding: 0;
+    background: #EEF3FA;
+}
+
+.detalle-container {
+    width: 100%;
+    padding: 35px;
+    margin-top: 20px;
+    box-sizing: border-box;
+}
+
+/*==============================================================
+ESTRUCTURA DE COMPONENTES (HEADER Y TOOLBAR)
+==============================================================*/
+.detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.detalle-logo {
+    width: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.detalle-logo img {
+    max-width: 170px;
+    max-height: 140px;
+}
+
+.detalle-titulo {
+    flex: 1;
+    text-align: center;
+    font-size: 42px;
+    font-weight: 800;
+    font-style: italic;
+    color: #0D47A1;
+    letter-spacing: .5px;
+}
+
+.detalle-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.detalle-resumen {
+    display: flex;
+    gap: 30px;
+    color: var(--texto);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.detalle-botones {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-exportar-detalle {
+    height: 40px; 
+    width: 100%; 
+    padding: 0 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap; 
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #1565C0;
+    color: white;
+    border: 1px solid #BFD5F3;
+    transition: background 0.2s; 
+}
+
+.btn-exportar-detalle:hover {
+    background: var(--azul-hover);
+}
+
+/*==============================================================
+BLOQUE DE INFORMACIÓN (FORMULARIOS)
+==============================================================*/
+.detalle-info {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+}
+
+.campo label {
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--texto);
+}
+
+.campo input {
+    height: 46px;
+    border: 1px solid var(--gris);
+    border-radius: 8px;
+    padding: 0 12px;
+    background: #F8FBFF;
+    font-weight: 600;
+    color: #333;
+    font-size: 15px;
+}
+
+.descripcion {
+    flex: 1;
+}
+
+/*==============================================================
+TABLA CON CONTROL DE DESPLAZAMIENTO (SCROLL)
+==============================================================*/
+.detalle-tabla {
+    border: 1px solid var(--gris);
+    border-radius: 10px;
+    background: var(--blanco);    
+    /* Crucial: Se vuelve flexible y maneja scroll en ambos ejes */
+    flex: 1;
+    overflow-y: auto; /* Scroll vertical para las filas */
+    overflow-x: auto; /* Scroll horizontal en pantallas angostas */
+    margin-bottom: 10px;
+}
+
+.tabla-detalle {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-detalle thead {
+    background: var(--azul);
+}
+
+.tabla-detalle thead th {
+    color: var(--blanco);
+    padding: 12px;
+    font-size: 13px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    background: var(--azul);
+    z-index: 1;
+}
+
+.tabla-detalle tbody td {
+    padding: 12px;
+    border-bottom: 1px solid #EEF2F7;
+    font-size: 14px;
+}
+
+.tabla-detalle tbody tr:nth-child(even) { background: #FAFCFF; }
+.tabla-detalle tbody tr:hover { background: var(--azul-claro); }
+
+/*==============================================================
+PAGINACIÓN DEL MODAL
+==============================================================*/
+.detalle-paginacion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding: 5px 10px;
+}
+
+.paginacion-info {
+    font-size: 14px;
+    color: var(--texto);
+    font-weight: 600;
+}
+
+.paginacion-controles {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-pag-modal {
+    background: var(--blanco);
+    border: 1px solid var(--gris);
+    color: var(--texto);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-pag-modal:hover:not(:disabled) {
+    background: var(--azul);
+    color: var(--blanco);
+    border-color: var(--azul);
+}
+
+.btn-pag-modal:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #F5F5F5;
+}
+
+/*==============================================================
+ESTILOS PROPIOS DE LA CAPA MODAL
+==============================================================*/
+.modal-overlay {
+    position: fixed;
+    z-index: 99999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(53, 80, 110, 0.4);
+    backdrop-filter: blur(4px);
+    overflow-y: auto;
+    padding: 50px 0;
+    box-sizing: border-box;
+    animation: fadeInModal 0.23s ease-out;
+}
+
+.modal-tarjeta-blanca {
+    position: relative;
+    background: var(--blanco);
+    margin: 0 auto;
+    width: 90%;
+    max-width: 1350px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(13, 71, 161, 0.15);
+    padding: 25px; /* Más espacio interno */    
+    /* Forzamos a la tarjeta a tener un alto máximo y trabajar con flexbox */
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* El contenedor .detalle-container ya no debe empujar márgenes externos en el modal */
+.modal-overlay 
+.detalle-container {
+    margin-top: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden; /* Evita que el contenedor desborde la tarjeta */
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/*==============================================================
+RESPONSIVE (UNIFICADO)
+==============================================================*/
+@media(max-width: 1000px){
+    .detalle-header, .detalle-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .detalle-info { flex-direction: column; }
+    .detalle-logo { width: 100%; }
+    .detalle-titulo { font-size: 30px; }
+    .modal-overlay { padding: 15px 0; }
+    .modal-tarjeta-blanca { width: 95%; padding: 10px; }
+}
+
+/*==============================================================
+BOTÓN FLOTANTE 'X' DE CIERRE (OPTIMIZADO)
+==============================================================*/
+.btn-cerrar-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    font-size: 36px;       /* Tamaño grande y visible */
+    line-height: 1;        /* Centrado vertical del caracter × */
+    font-weight: 300;      /* Aspecto fino y moderno */
+    color: var(--texto);   /* Tu azul institucional #35506E */
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 50%;    /* Área de clic circular */
+    transition: all 0.2s ease;
+    z-index: 99999;        /* Siempre por encima del encabezado */
+}
+
+.btn-cerrar-modal:hover {
+    color: #D32F2F;                 /* Cambia a rojo sutil al pasar el mouse */
+    background-color: #FEEBEE;      /* Fondo tenue rosado de advertencia */
+    transform: scale(1.08);          /* Efecto dinámico de escala */
+}
+
+/* Ajuste preventivo para que el encabezado del detalle no se solape con la X */
+.detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-right: 40px; /* Margen de protección para que el logo GM no toque la X */
+}
+
+@media (max-width: 1000px) {
+    .btn-cerrar-modal {
+        top: 10px;
+        right: 15px;
+        font-size: 30px;
+    }
+    .detalle-header {
+        padding-right: 0;
+    }
+}

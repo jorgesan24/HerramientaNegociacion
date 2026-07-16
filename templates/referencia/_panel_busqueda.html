@@ -1,0 +1,100 @@
+<!-- CONTENEDOR 2: BUSCADOR Y BOTONES (SUBIRÁN AL CENTRO) -->
+<div class="ref-bloque-inferior">
+
+    <div class="ref-panel-header">
+
+        <div class="ref-header-texto">
+
+            <h3>Buscar por:</h3>
+
+            <p>
+                <label 
+                    id="lblCriterio" 
+                    class="ref-label-buscar">
+                CUM
+                </label>
+            </p>
+
+        </div>
+
+    </div>
+   
+    <div class="ref-buscador-acciones">
+        
+        <div class="ref-input-buscar-wrapper">
+
+            <span class="lupa-icono">
+                🔍            
+            </span>
+
+            <div id="busquedaTexto" style="width: 100%;">
+
+                <input 
+                    type="text" 
+                    name="filtro" 
+                    value="{{ filtro }}">
+                    
+            </div>
+
+            <div id="busquedaRegional" style="width: 100%;">
+
+                <select name="regional">
+
+                    <option value="">
+                        Seleccione regional
+                    </option>
+
+                    {% for regional in regionales %}
+
+                    <option
+                        value="{{ regional }}"
+                        {% if filtro == regional %}selected{% endif %}>
+                        {{ regional }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+        </div>        
+
+        <button 
+            type="submit" 
+            class="btn-principal">
+            <img src="{{ url_for('static', filename='img/buscar.png') }}" style="margin-right: 8px; height: 26px;">
+            Buscar
+        </button>
+        
+        <a href="/exportar?filtro={{ filtro }}&tipo_filtro={{ tipo_filtro }}" class="link-exportar">
+
+            <button 
+                type="button" 
+                class="btn-secundario">
+                
+                <img
+                    src="{{ url_for('static', filename='img/excel.png') }}" style="margin-right: 8px;">
+                    Exportar
+            </button>
+            
+        </a>
+
+        <button
+            id="btnDetalle"
+            type="button"
+            class="btn-secundario"
+            data-cum="{{ detalle['CÓDIGO'] if detalle else '' }}"
+            onclick="abrirDetalleFacturacionModal(this, event)">
+
+            <i class="fa-solid fa-circle-info"></i>
+            
+            <img
+                src="{{ url_for('static', filename='img/detalle.png') }}" style="margin-right: 8px; height: 40px">
+                Detalle    
+
+        </button>
+        
+    </div>
+    
+</div>

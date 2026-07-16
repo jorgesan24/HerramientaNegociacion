@@ -1,0 +1,87 @@
+<div class="panel-tabla">
+
+    <div class="ref-registros-contador">
+        Resultados encontrados:
+        <strong>{{ total_registros }}</strong>
+         |
+        Página:
+        <strong>{{ pagina }}</strong>
+        de
+        <strong>{{ total_paginas }}</strong>
+    </div>
+
+    <!-- CONTENEDOR UNIFICADO CON DISEÑO DEL MODAL -->
+    <div class="detalle-tabla ref-tabla-scroll">
+
+        <table class="tabla-detalle">
+            <thead>
+                <tr>
+                    <th>CUM</th>
+                    <th>Descripción INVIMA</th>
+                    <th>Medicamento</th>
+                    <th>P. Activo</th>
+                    <th>G. Terapéutico</th>
+                    <th>Estado</th>
+                    <th>Cobertura</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for medicamento in resultados %}
+                <tr class="fila-medicamento" data-codigo="{{ medicamento['CÓDIGO'] }}">
+                    <td>
+                        {% if tipo_filtro == "REGIONAL" %}
+                        <a href="/referencia?codigo={{ medicamento['CÓDIGO'] }}&regional={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina }}">
+                            {{ medicamento["CÓDIGO"] }}
+                        </a>
+                        {% else %}
+                        <a href="/referencia?codigo={{ medicamento['CÓDIGO'] }}&filtro={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina }}">
+                            {{ medicamento["CÓDIGO"] }}
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>{{ medicamento["DESCRIPCIÓN INVIMA"] }}</td>
+                    <td>{{ medicamento["DESCRIPCIÓN"] }}</td>
+                    <td>{{ medicamento["P. ACTIVO"] }}</td>
+                    <td>{{ medicamento["GRUPO TERAPEUTICO"] }}</td>
+                    <td>{{ medicamento["COBERTURA"] }}</td>
+                    <td>{{ medicamento["ESTADO INVIMA"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div> <!-- CIERRE DE detalle-tabla -->
+
+    <!-- PAGINACIÓN ESTILIZADA DE MANERA HOMOGÉNEA -->
+    <div class="paginacion">
+        {% if pagina > 1 %}
+            {% if tipo_filtro == "REGIONAL" %}
+                <a href="/referencia?regional={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina-1 }}">
+                    Anterior
+                </a>
+            {% else %}
+                <a href="/referencia?filtro={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina-1 }}">
+                    Anterior
+                </a>
+            {% endif %}
+        {% endif %}
+
+        <span>
+            Página {{ pagina }} de {{ total_paginas }}
+        </span>
+
+        {% if pagina < total_paginas %}
+            {% if tipo_filtro == "REGIONAL" %}
+                <a href="/referencia?regional={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina+1 }}">
+                    Siguiente
+                </a>
+            {% else %}
+                <a href="/referencia?filtro={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina+1 }}">
+                    Siguiente
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+</div>

@@ -1,0 +1,102 @@
+<div class="panel-validacion">
+    
+    <div class="panel-validacion-header" id="toggleHojas">
+
+        <div class="titulo-panel">
+
+            <span class="icono-panel">
+                📑
+            </span>
+
+            <h3>Seleccionar hoja</h3>
+
+        </div>
+
+        <span id="iconoToggleHojas" class="flecha-panel">▲</span>
+
+    </div>
+
+    <div id="contenidoHojas">
+
+        <div class="panel-hoja-body">
+
+            {% if hojas %}
+                
+                <form method="POST">
+
+                    <input
+                        type="hidden"
+                        name="archivo"
+                        value="{{ archivo }}">
+
+                    <div class="lista-hojas">
+
+                        {% for hoja in hojas %}
+
+                        <label class="item-hoja {% if hoja == hoja_seleccionada %}seleccionada{% endif %}">
+
+                            <input
+                                type="radio"
+                                name="hoja"
+                                value="{{ hoja }}"
+                                {% if hoja == hoja_seleccionada %}checked{% endif %}>
+
+                            <img
+                                src="{{ url_for('static', filename='img/excel.png') }}"
+                                class="icono-hoja">
+
+                            <span class="nombre-hoja">
+
+                                {{ hoja }}
+
+                            </span>
+
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <button
+                        class="btn-principal btn-procesar"
+                        type="submit">
+
+                        ▶   Procesar hoja
+
+                    </button>
+
+                </form>            
+
+            {% else %}
+
+                <div class="sin-hojas">
+
+                    No hay hojas cargadas.
+
+                </div>
+
+            {% endif %}
+
+            <div class="info-hojas">
+
+                <span class="info-icono">
+
+                    ℹ
+
+                </span>
+
+                <span>
+
+                    Seleccione una hoja y presione
+                    <strong>Procesar hoja</strong>
+                    para iniciar la validación.
+
+                </span>
+
+            </div>
+        
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,97 @@
+/* ==========================
+   CONFIGURACIÓN GENERAL
+========================== */
+:root{
+    --escala: 0.65;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:"Segoe UI",Tahoma,sans-serif;
+    background:#f4f7fb;
+    color:#263238;
+}
+
+/* ==========================
+   TARJETAS
+========================== */
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 4px 18px rgba(0,0,0,.08);
+}
+
+/* ==========================
+   BOTONES
+========================== */
+
+.btn-principal{
+    background:#0058c8;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:10px 22px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.25s;
+}
+
+.btn-principal:hover{
+    background:#0047a5;
+}
+
+.btn-secundario{
+    background:white;
+    color:#0058c8;
+    border:2px solid #0058c8;
+    border-radius:10px;
+    padding:10px 20px;
+    cursor:pointer;
+}
+
+.btn-secundario:hover{
+    background:#edf4ff;
+}
+
+/* Contenedor Base de Alertas */
+.alerta-contenedor {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Estilo si el mensaje es un Error (Celulares/Archivos vacíos) */
+.alerta-error {
+    background-color: #fef2f2;
+    border: 1px solid #fee2e2;
+    color: #991b1b;
+}
+
+/* Estilo si el mensaje es de Éxito */
+.alerta-exito {
+    background-color: #ecfdf5;
+    border: 1px solid #d1fae5;
+    color: #065f46;
+}
+
+.alerta-icono {
+    font-size: 18px;
+    margin-right: 12px;
+}
+
+.alerta-texto {
+    margin: 0;
+    font-weight: 500;
+}

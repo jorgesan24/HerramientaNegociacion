@@ -1,0 +1,116 @@
+<section id="panelTabla" class="panel-tabla">
+
+    <div class="toolbar-tabla">
+
+        <div class="toolbar-izquierda">
+
+            <input
+                type="text"
+                id="buscarTabla"
+                class="buscar-tabla"
+                placeholder="🔍 Buscar medicamento...">
+
+        </div>
+
+        <div class="toolbar-derecha">
+
+            <label>
+
+                Mostrar
+
+                <select id="filtroTabla">
+
+                    <option value="todos">Todos</option>
+                    <option value="ACEPTAR">Aceptar</option>
+                    <option value="RENEGOCIAR">Renegociar</option>
+                    <option value="DUPLICADO">Duplicados</option>
+                    <option value="ACTIVO">Activos</option>
+                    <option value="NO ACTIVO">No activos</option>
+
+                </select>
+
+            </label>
+
+            <button
+                id="btnExportar"
+                class="btn-exportar-excel">
+
+                <img
+                    src="{{ url_for('static', filename='img/excel.png') }}" style="margin-right: 8px;">
+                    Exportar
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="contenedor-tabla">
+
+        {% if tabla %}
+
+            <div class="tabla-scroll">
+
+            <table id="tablaNegociacion" class="display">
+
+                <thead>
+
+                    <tr>
+
+                        {% for columna in tabla[0].keys() %}
+                            <th>{{ columna }}</th>
+                        {% endfor %}
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for fila in tabla %}
+
+                    <tr>
+
+                        {% for valor in fila.values() %}
+                            <td>{{ valor }}</td>
+                        {% endfor %}
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="tabla-vacia">
+
+                <div class="icono-tabla">
+
+                    📄
+
+                </div>
+
+                <h3>
+
+                    No hay información para mostrar
+
+                </h3>
+
+                <p>
+
+                    Seleccione una hoja para iniciar el proceso.
+
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</section>

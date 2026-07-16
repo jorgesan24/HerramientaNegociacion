@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Referencia
+{% endblock %}
+
+{% block estilos %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/referencia.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
+{% endblock %}
+
+{% block contenido %}
+<div class="referencia-layout">
+    {% include "referencia/_panel_superior_ref.html" %}
+    {% include "referencia/_tabla_referencia.html" %}
+</div>
+
+<!-- CÁSCARA LIMPIA DE LA VENTANA EMERGENTE -->
+<div id="modalDetalleFacturacion" class="modal-overlay" style="display: none;">
+    <div id="modalBodyContent" class="modal-tarjeta-blanca">
+        <!-- Inyección dinámica -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+      const radios = $('input[name="tipo_filtro"]');
+      const busquedaTexto = $("#busquedaTexto");
+      const busquedaRegional = $("#busquedaRegional");
+
+    <!-- Asegúrate de cargar tu archivo modular al final de la página -->
+    src="{{ url_for('static', filename='js/negociacion.js') }}"
+</script>
+{% endblock %}

@@ -1,0 +1,467 @@
+<div id="modalExportar" class="modal-exportar">
+
+    <div class="modal-contenido">
+
+        <!--====================================-->
+        <!-- ENCABEZADO -->
+        <!--====================================-->
+
+        <div class="modal-header">
+
+            <div class="modal-titulo">
+
+                <span class="modal-icono">📤</span>
+
+                <h2>Exportar negociación</h2>
+
+            </div>
+
+            <button
+                type="button"
+                id="cerrarModal"
+                class="cerrar-modal">
+
+                ✕
+
+            </button>
+
+        </div>
+
+        <form
+            id="formExportar"
+            method="POST"
+            action="{{ url_for('exportar_negociacion') }}">
+
+            <input
+                type="hidden"
+                name="id_cache"
+                value="{{ id_cache }}">
+
+            <!--====================================-->
+            <!-- RESUMEN -->
+            <!--====================================-->
+
+            <div class="modal-resumen">
+
+                <div class="resumen-item">
+
+                    <span class="etiqueta">
+                        Archivo
+                    </span>
+
+                    <span class="valor">
+
+                        {{ archivo_nombre }}
+
+                    </span>
+
+                </div>
+
+                <div class="resumen-item">
+
+                    <span class="etiqueta">
+                        Hoja
+                    </span>
+
+                    <span class="valor">
+
+                        {{ hoja_seleccionada }}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!--====================================-->
+            <!-- DATOS DEL PROVEEDOR -->
+            <!--====================================-->
+
+            <section class="bloque-exportacion">
+
+                <h3 class="titulo-bloque">🏢 Información del prestador</h3>
+
+                <!-- Reemplaza tus divs intermedios por la clase correcta que tienes en CSS -->
+                <div class="grid-proveedor">
+
+                    <div class="campo">
+
+                        <label>
+                            Identificación representante
+                        </label>
+
+                        <input 
+                            type="text" 
+                            name="identificacion_representante" 
+                            value="{{ datos_exportacion.identificacion_representante }}" 
+                            required>
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label>
+                            Nombre representante
+                        </label>
+
+                        <input 
+                            type="text" 
+                            name="nombre_representante" 
+                            value="{{ datos_exportacion.nombre_representante }}" 
+                            required>
+                        
+                    </div>
+                    
+                    <div class="campo">
+
+                        <label>NIT prestador</label>
+
+                        <input
+                            type="text"
+                            name="nit"
+                            value="{{ datos_exportacion.nit }}"
+                            required>
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label>Razón Social</label>
+
+                        <input
+                            type="text"
+                            name="proveedor"
+                            value="{{ datos_exportacion.proveedor }}"
+                            required>
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label>Ciudad</label>
+
+                        <input
+                            type="text"
+                            name="ciudad"
+                            value="{{ datos_exportacion.ciudad }}">
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label>Sucursal</label>
+
+                        <input
+                            type="text"
+                            name="sucursal"
+                            value="{{ datos_exportacion.sucursal }}">
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label>Código sucursal</label>
+
+                        <input
+                            type="text"
+                            name="codigo_sucursal"
+                            value="{{ datos_exportacion.codigo_sucursal }}">
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- CONTRATO -->
+
+            <section class="bloque-exportacion">
+
+                <h3 class="titulo-bloque">
+                    📄 Datos del contrato
+                </h3>
+
+                <div class="datos-contrato-grid">
+
+                    <div class="campo">
+                        <label>Fecha inicio</label>
+                        <input type="date" name="fecha_inicio">
+                    </div>
+
+                    <div class="campo">
+                        <label>Forma contratación</label>
+                        <select name="forma_contratacion">
+                            <option value="">Seleccione...</option>
+                            <option>Evento</option>
+                            <option>Capita</option>
+                            <option>PGP</option>
+                            <option>Paquete</option>
+                            <option>Otro</option>
+                        </select>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!--====================================-->
+            <!-- TIPO ATENCION -->
+            <!--====================================-->
+
+            <div class="opciones-doble">
+
+                <section class="bloque-exportacion">
+
+                    <h3 class="titulo-bloque">
+                        🏥 Tipo de atención
+                    </h3>
+
+                    <div class="grupo-opciones">
+
+                        <label class="card-check">
+
+                            <input type="checkbox"
+                                   name="tipo_atencion"
+                                   value="AMBULATORIA">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">🩺</div>
+
+                                <div class="titulo">
+
+                                    Ambulatoria
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <label class="card-check">
+
+                            <input type="checkbox"
+                                   name="tipo_atencion"
+                                   value="DOMICILIARIA">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">🏠</div>
+
+                                <div class="titulo">
+
+                                    Domiciliaria
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <label class="card-check">
+
+                            <input type="checkbox"
+                                   name="tipo_atencion"
+                                   value="HOSPITALIZACION">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">🏥</div>
+
+                                <div class="titulo">
+
+                                    Hospitalización
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <label class="card-check">
+
+                            <input type="checkbox"
+                                   name="tipo_atencion"
+                                   value="URGENCIAS">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">🚑</div>
+
+                                <div class="titulo">
+
+                                    Urgencias
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+                </section>
+
+                <!--====================================-->
+                <!-- PLAN -->
+                <!--====================================-->
+
+                <section class="bloque-exportacion">
+
+                    <h3 class="titulo-bloque">
+                        💳 Plan
+                    </h3>
+
+                    <div class="grupo-opciones-plan">
+
+                        <label class="card-check">
+
+                            <input type="checkbox" name="plan" value="POS CONTRIBUTIVO">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">🟦</div>
+
+                                <div class="titulo">
+
+                                    POS Contributivo
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <label class="card-check">
+
+                            <input type="checkbox" name="plan" value="POS SUBSIDIADO">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">🟩</div>
+
+                                <div class="titulo">
+
+                                    POS Subsidiado
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <label class="card-check">
+
+                            <input type="checkbox" name="plan" value="PLAN EMPRESARIAL">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">⭐</div>
+
+                                <div class="titulo">
+
+                                    Plan Empresarial
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <label class="card-check">
+
+                            <input type="checkbox" name="plan" value="PLAN PREMIUM">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">💎</div>
+
+                                <div class="titulo">
+
+                                    Plan Premium
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <label class="card-check">
+
+                            <input
+                                id="planOtro"
+                                type="checkbox"
+                                name="plan"
+                                value="OTRO">
+
+                            <div class="card-check-body">
+
+                                <div class="icono">✏️</div>
+
+                                <div class="titulo">
+
+                                    Otro
+
+                                </div>
+
+                            </div>
+
+                        </label>
+
+                        <div id="planOtroCard" class="card-texto oculto">
+
+                            <div class="card-texto-body">
+
+                                <div class="card-texto-header">
+
+                                    <div class="icono">
+                                        ✏️
+                                    </div>
+                                    <span>Otro plan</span>
+                                
+                                </div>    
+
+                                <input
+                                    type="text"
+                                    id="plan_otro"
+                                    name="plan_otro"
+                                    placeholder="Escriba el plan">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>                
+
+            </div>
+
+            <!--====================================-->
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    id="cancelarModal"
+                    class="btn-secundario">
+
+                    Cancelar
+
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-principal">
+
+                    📤 Exportar Excel
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

@@ -1,0 +1,178 @@
+<div class="panel-validacion">
+
+    <div class="panel-validacion-header" id="toggleValidacion">
+
+        <div class="titulo-panel">
+
+            <span class="icono-panel">
+                📋
+            </span>
+
+            <h3>Resultado del cargue</h3>
+
+        </div>
+
+        <span id="iconoToggleValidacion" class="flecha-panel">▲</span>
+
+    </div>
+
+    <div id="contenidoValidacion" class="panel-validacion-contenido">
+
+        {% if validaciones %}
+
+            <div class="panel-validacion-body">
+
+                <div class="card panel-validacion">
+
+                    <div class="info-proceso">
+
+                        <div class="info-proceso-grid">
+
+                            <div class="info-card">
+
+                                <div class="info-header">
+
+                                    <img
+                                        src="{{ url_for('static', filename='img/archivo.jpg') }}"
+                                        class="info-icono">
+
+                                    <span class="info-label">
+                                        Archivo
+                                    </span>
+
+                                </div>
+
+                                <div class="info-value">
+                                    {{ archivo_nombre }}
+                                </div>
+
+                            </div>
+
+                            <div class="info-card">
+
+                                <div class="info-header">
+
+                                    <img
+                                        src="{{ url_for('static', filename='img/hoja.jpg') }}"
+                                        class="info-icono">
+
+                                    <span class="info-label">
+                                        Hoja
+                                    </span>
+
+                                </div>
+
+                                <div class="info-value">
+                                    {{ hoja_seleccionada }}
+                                </div>
+
+                            </div>
+
+                            <div class="info-card">
+
+                                <div class="info-header">
+
+                                    <img
+                                        src="{{ url_for('static', filename='img/tiempo.jpg') }}"
+                                        class="info-icono">
+
+                                    <span class="info-label">
+                                        Tiempo
+                                    </span>
+
+                                </div>
+
+                                <div class="info-value">
+                                    {{ tiempo_proceso }}
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% if validaciones %}
+
+                        <div class="panel-validacion-body">
+
+                            {% for item in validaciones %}
+
+                                {% set texto = item.replace('✔','').replace('❌','').strip() %}
+
+                                <div class="item-validacion
+                                    {% if '✔' in item %}
+                                        ok
+                                    {% elif '❌' in item %}
+                                        error
+                                    {% else %}
+                                        info
+                                    {% endif %}
+                                ">
+
+                                    <div class="estado">
+
+                                        {% if '✔' in item %}
+                                            ✅
+                                        {% elif '❌' in item %}
+                                            ❌
+                                        {% else %}
+                                            ℹ️
+                                        {% endif %}
+
+                                    </div>
+
+                                    <div class="texto">
+
+                                        {{ texto }}
+
+                                    </div>
+
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                        <div class="panel-validacion-footer">
+
+                            {% if archivo_valido %}
+                                <div class="estado-final ok">
+
+                                    🟢 Archivo listo para negociación
+
+                                </div>
+                            {% else %}
+                                <div class="estado-final error">
+
+                                    🔴 Archivo con errores
+
+                                </div>
+                            {% endif %}
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="sin-validaciones">
+
+                            Aún no se ha procesado ningún archivo.
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+            </div>
+
+        {% else %}
+
+            <div class="sin-validaciones">
+
+                Aún no se ha procesado ningún archivo.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>

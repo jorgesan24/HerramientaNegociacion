@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+Negociación
+{% endblock %}
+
+{% block estilos %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/negociacion.css') }}">
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/header.css') }}">
+{% endblock %}
+
+{% block contenido %}
+
+<div class="contenedor">
+
+    {% include "negociacion/_panel_archivo.html" %}
+
+    {% include "negociacion/_contenido_principal.html" %}
+
+    {% if tabla %}
+
+    {% include "negociacion/_export_modal.html" %}
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    const filtrosKPI = JSON.parse('{{ filtros_kpi | tojson | safe }}');
+    const estadoPanel = "{{ estado_panel }}";
+</script>
+
+{% endblock %}

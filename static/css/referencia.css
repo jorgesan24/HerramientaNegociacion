@@ -1,0 +1,554 @@
+/*==============================================================
+VARIABLES
+==============================================================*/
+
+:root{
+    --azul:#1565C0;
+    --azul-hover:#2A69C7;
+    --azul-claro:#EDF5FF;
+    --gris-borde:#DCE7F5;
+    --gris-hover:#BFD5F3;
+    --texto:#35506E;
+    --radio:16px;
+    --sombra:0 6px 16px rgba(0,0,0,.04);
+    --sombra-hover:0 8px 20px rgba(33,87,173,.12);
+}
+
+/*=====================================
+Panel superior
+======================================*/
+.panel-superior {
+    display: grid;
+    grid-template-columns: 1fr 0.5fr 1fr !important; 
+    gap: 14px;
+    margin: 10px 20px;
+    align-items: stretch !important; /* Alinea los 3 paneles perfectamente por su borde superior */
+    box-sizing: border-box !important;
+}
+
+/*==============================================================
+Panel filtros
+==============================================================*/
+.ref-panel-filtros {
+    background: #FFF;
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.grupo-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+.card-radio {
+    display: block;
+    cursor: pointer;
+    width: 100%;
+}
+
+.card-radio input {
+    display: none; /* Oculta el radio nativo */
+}
+
+/* Estilo base de la tarjeta compacta (80px de alto como el modal) */
+.card-radio-body {
+    position: relative;
+    height: 74px;
+    border-radius: 16px;
+    border:1px solid #DCE7F5;
+    background: #FFFFFF;;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition:all .25s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,.03);
+    box-sizing: border-box;
+}
+
+.card-radio-body:hover {
+    transform: translateY(-2px);
+    border-color: #BFD5F3;
+    box-shadow: 0 8px 18px rgba(13,71,161,.08);
+}
+
+.card-radio:hover 
+.card-radio-body{
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(33,87,173,.12);
+    border-color:#BFD6F5;
+}
+
+/* Estado seleccionado */
+.card-radio input:checked + 
+.card-radio-body {
+    background:#EDF5FF;
+    border-color: var(--exp-azul, #1565C0);
+    box-shadow:0 6px 18px rgba(42,105,199,.18);
+    border:2px solid #2A69C7;
+}
+
+.card-radio 
+.icono {
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+
+.card-radio 
+.titulo {
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    color: #35506E;
+}
+
+/* Etiqueta intermedia "Buscar por:" */
+.ref-label-buscar {
+    display: block;
+    color: #35506E;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 0 !important;
+    margin-bottom: 4px !important;
+}
+
+/* Check */
+.card-radio 
+.check{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:18px;
+    height:18px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    border-radius:50%;
+    background:var(--azul-hover);
+    color:#FFF;
+    font-size:11px;
+    opacity:0;
+    transform:scale(.6);
+    transition:.25s;
+}
+
+.card-radio input:checked + 
+.card-radio-body 
+.check{
+    opacity:1;
+    transform:scale(1);
+}
+
+/*==============================================================
+CONTENEDOR PRINCIPAL (CAJA BLANCA)
+==============================================================*/
+.ref-bloque-inferior {
+    background: #FFF;
+    border: 1px solid #E3ECF6;
+    border-radius: 16px;
+    padding: 6px 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    display: flex !important;
+    height: 100%;
+}
+
+.ref-header-texto h3 { margin: 0 0 2px 0; }
+.ref-header-texto p { margin: 0; padding: 0; }
+
+/*==============================================================
+DISTRIBUCIÓN DE ELEMENTOS (INPUT Y BOTONES APILADOS)
+==============================================================*/
+.ref-buscador-acciones {
+    display: flex;
+    flex-direction: column; 
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/*==============================================================
+CONTENEDOR DE ENTRADA (GRIS CON LUPA)
+==============================================================*/
+.ref-input-buscar-wrapper {
+    display: flex;
+    align-items: center;
+    background: #F4F7FA; 
+    border: 1px solid #D6E2F1; 
+    border-radius: 10px; 
+    padding: 0 12px;
+    height: 40px; 
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.ref-input-buscar-wrapper:focus-within {
+    background: #FFF;
+    border-color: #1565C0;
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
+}
+
+.ref-input-buscar-wrapper .lupa-icono {
+    font-size: 15px;
+    color: #8A9CAE;
+    margin-right: 10px;
+    user-select: none;
+}
+
+/* Limpieza de inputs y select nativos dentro de la barra gris */
+.ref-input-buscar-wrapper input[type="text"],
+.ref-input-buscar-wrapper select {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: #2C3E50;
+    outline: none;
+    box-sizing: border-box;
+}
+
+/*==============================================================
+BOTONES UNIFICADOS (PRINCIPAL Y SECUNDARIO)
+==============================================================*/
+.btn-principal,
+.btn-secundario {
+    height: 40px; 
+    width: 100%; 
+    padding: 0 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap; 
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #1565C0;
+    color: white;
+    border: 1px solid #BFD5F3;
+    transition: background 0.2s;
+}
+
+.btn-principal:hover,
+.btn-secundario:hover {
+    background: #0D47A1;
+}
+
+.link-exportar {
+    display: block;
+    width: 100%;
+    text-decoration: none;
+}
+
+/*==============================================================
+ANIMACIONES Y TRANSICIONES
+==============================================================*/
+#busquedaTexto, 
+#busquedaRegional {
+    opacity: 1;
+    max-height: 50px;
+    overflow: hidden;
+    transition: opacity 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
+}
+
+#busquedaTexto.oculto, 
+#busquedaRegional.oculto {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    pointer-events: none;
+}
+
+/*==============================================================
+Panel Derecho
+==============================================================*/
+
+.ref-panel-valores {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid #E3ECF6;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
+    flex-direction: column;
+    height: auto ; /* Ahora el contenedor hereda la altura de .panel-superior */
+}
+
+.panel-valores-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) !important; /* Columna izquierda fija + 3 fluidas */
+    gap: 10px;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Estilo base de la tarjeta compacta (80px de alto como el modal) */
+.tarjeta-ref {
+    height: 100%;
+    border-radius: 12px;
+    border:1px solid #DCE7F5;
+    background: #FFFFFF;;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition:all .25s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,.03);
+    box-sizing: border-box;
+    margin: 0 0 6px 0;
+    color: #0D47A1 ;
+    font-size: 14px ;
+    font-weight: 600;
+    text-align: center;
+}
+
+.tarjeta-ref:hover {
+    transform: translateY(-2px);
+    border-color:#BFD6F5;
+    box-shadow:0 8px 20px rgba(33,87,173,.12);
+
+}
+
+.tarjeta-ref p {
+    font-size:14px;
+    font-weight:500;
+    color:#C62828;
+    text-align:center;
+    margin: 1px;
+}
+
+/*==============================================================
+POSICIONAMIENTO EXACTO (SEGUN EL BOCETO)
+==============================================================*/
+
+/* Columna Izquierda (Filas de Acto y Normativo) */
+.tarjeta-acto {
+    grid-column: 1 / span 2 ;
+    grid-row: 1;
+}
+
+.tarjeta-normativo {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+/* Fila 2: Métricas de importes (Máximo, Mínimo, Promedio) */
+.tarjeta-maximo { grid-column: 1; grid-row: 2; }
+.tarjeta-minimo { grid-column: 2; grid-row: 2; }
+.tarjeta-promedio { grid-column: 3; grid-row: 2; }
+
+/* Fila 3: Resultados finales obtenidos */
+.tarjeta-segun { 
+    grid-column: 1; 
+    grid-row: 3; 
+}
+
+.tarjeta-fuente {
+    grid-column: 2 / span 2;
+    grid-row: 3;
+}
+
+/*==============================================================
+ESTILOS DEL PANEL PRINCIPAL Y CONTENEDOR
+==============================================================*/
+.panel-tabla {
+    width: 99%;
+    margin: 6px;
+    background: #FFFFFF;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(13, 71, 161, 0.03);
+    overflow: hidden;
+    border: 1px solid #D6E2F1;
+    padding: 6px 12px; 
+    box-sizing: border-box;
+    max-height: 60%;
+    height: fit-content; 
+}
+
+/* Scroll unificado para la tabla principal */
+.ref-tabla-scroll {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 400px;
+    width: 100%;
+    margin-top: 5px; /* Bajamos de 10px a 5px */
+}
+
+/*==============================================================
+ESTILOS INTERNOS DE LA TABLA (IGUAL AL MODAL)
+==============================================================*/
+.detalle-tabla {
+    border: 1px solid #DCE7F5;
+    border-radius: 10px;
+    background: #FFFFFF;
+    max-width: 100%;
+}
+
+.tabla-detalle {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-detalle thead {
+    background: #1565C0; /* Azul corporativo */
+}
+
+.tabla-detalle thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    color: #FFFFFF;
+    font-weight: 700;
+    padding: 8px; /* Más aire vertical idéntico al modal */
+    text-align: left;
+    font-size: 11px;
+}
+
+.tabla-detalle tbody td {
+    padding: 7px; /* Ajuste del padding para que no se vea colapsado */
+    border-bottom: 1px solid #EEF2F7;
+    font-size: 11px;
+    color: #333333;
+    white-space: nowrap; /* Evita saltos de línea */
+}
+
+/* Cebrado e interactividad */
+.tabla-detalle tbody tr:nth-child(even) {
+    background-color: #FAFCFF;
+}
+
+.tabla-detalle tbody tr:hover {
+    background-color: #EDF5FF !important;
+    cursor: pointer;
+}
+
+/* Fila activa seleccionada en la grilla */
+.tabla-detalle tbody tr.fila-seleccionada {
+    background-color: #DCE7F5 !important;
+}
+
+/*==============================================================
+CONTADOR DE REGISTROS SUPERIOR
+==============================================================*/
+.ref-registros-contador {
+    font-weight: 600;
+    background: #EAF3FF;
+    color: #0D47A1;
+    border-radius: 6px;
+    display: inline-block;
+    padding: 0px 10;
+    font-size: 12px;
+}
+
+/*==============================================================
+ESTILO LIMPIO PARA LOS ENLACES DE LA COLUMNA CUM
+==============================================================*/
+.tabla-detalle tbody td a {
+    color: #1565C0;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background 0.2s;
+}
+
+.tabla-detalle tbody td a:hover {
+    background: #DCE7F5;
+    color: #0D47A1;
+}
+
+/*==============================================================
+PAGINACIÓN ESTILIZADA CONSISTENTE
+==============================================================*/
+.paginacion {
+    margin-top: 8px;
+    margin-bottom: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.paginacion a, 
+.paginacion span {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    box-sizing: border-box;
+}
+
+.paginacion a {
+    color: #35506E;
+    border: 1px solid #DCE7F5;
+    background: #FFFFFF;
+    transition: all 0.2s;
+}
+
+.paginacion a:hover {
+    background: #1565C0;
+    color: #FFFFFF;
+    border-color: #1565C0;
+}
+
+.paginacion span {
+    background: #F5F5F5;
+    color: #35506E;
+    border: 1px solid #DCE7F5;
+}
+
+/*======================================================
+HEADER PANEL REFERENCIA
+======================================================*/
+
+.ref-panel-header{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin-bottom:10px;
+}
+
+.ref-header-icono{
+    width:52px;
+    height:52px;
+    border-radius:14px;
+    background:#EEF5FD;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:20px;
+    color:#0D47A1;
+    box-shadow:none;
+    border:1px solid #D8E6F8;
+}
+
+.ref-header-texto h3{
+    margin:0;
+    color:#0D47A1;
+    font-size:18px;
+    font-weight:600;
+}
+
+.ref-header-texto p{
+    margin-top:3px;
+    color:#72839A;
+    font-size:11px;
+    line-height:1.4;
+}

@@ -1,0 +1,38 @@
+/* ============================= */
+/* HEADER                        */
+/* ============================= */
+
+.header-principal{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#eef5ff;
+    border-radius:18px;
+    padding:6px 14px;
+    box-shadow:0 5px 18px rgba(0,0,0,.08);
+    margin-bottom:14px;
+}
+
+.logo-panel{
+    width:170px;
+    display:flex;
+    align-items:center;
+}
+
+.logo-panel img{
+    max-height:58px;
+    max-width:100%;
+}
+
+.titulo-panel-header{
+    flex:1;
+    text-align:center;
+}
+
+.titulo-panel-header h1{
+    color:#0b4ea2;
+    font-size:38px;
+    font-weight:700;
+    margin:0;
+    text-align: center;
+}

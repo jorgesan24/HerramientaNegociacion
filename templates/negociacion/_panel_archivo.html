@@ -1,0 +1,62 @@
+<section class="panel-archivo">
+
+    <div class="card archivo-card">
+
+        <div class="archivo-label">
+            Negociación cargada:
+        </div>
+
+        <div class="archivo-info">
+
+            <div class="archivo-nombre">
+
+                <img
+                    src="{{ url_for('static', filename='img/excel.png') }}"
+                    class="icono-excel"
+                    alt="Excel">
+
+                <span class="texto-archivo">
+
+                    {% if archivo_nombre %}
+                        {{ archivo_nombre }}
+                    {% else %}
+                        Ningún archivo seleccionado
+                    {% endif %}
+
+                </span>
+
+                {% if archivo_nombre %}
+
+                    <span class="archivo-ok">
+                        ✔
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            class="form-cambiar">
+
+            <label class="btn-secundario">
+
+                Cambiar archivo
+
+                <input
+                    type="file"
+                    name="archivo"
+                    accept=".xlsx,.xls"
+                    hidden
+                    onchange="this.form.submit()">
+
+            </label>
+
+        </form>
+
+    </div>
+
+</section> 

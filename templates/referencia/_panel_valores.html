@@ -1,0 +1,62 @@
+<section class="ref-panel-valores">
+
+    <div class="ref-panel-header">
+
+        <div class="ref-header-icono">
+            💰
+        </div>
+
+        <div class="ref-header-texto">
+
+            <h3>Valores de Referencia</h3>
+
+        </div>
+
+    </div>    
+
+    <div class="panel-valores">        
+
+        <div class="panel-valores-grid">
+
+            <!-- BLOQUE IZQUIERDO: COLUMNA VERTICAL -->
+            <div class="tarjeta-ref tarjeta-acto">
+                <label class="Titulo">Acto Administrativo</label>
+                <p>{{ acto_administrativo if acto_administrativo else '-' }}</p>
+            </div>
+
+            <div class="tarjeta-ref tarjeta-normativo">
+                <label class="Titulo">Valor Normativo</label>
+                <p>{{ valor_normativo if valor_normativo else '-' }}</p>
+            </div>
+
+            <!-- BLOQUE DERECHO: FILA SUPERIOR -->
+            <div class="tarjeta-ref tarjeta-maximo">
+                <label class="Titulo">Valor Máximo</label>
+                <p>{{ detalle["VALOR MAXIMO"] if detalle else '-' }}</p>
+            </div>
+
+            <div class="tarjeta-ref tarjeta-minimo">
+                <label class="Titulo">Valor Mínimo</label>
+                <p>{{ detalle["VALOR MINIMO"] if detalle else '-' }}</p>
+            </div>
+
+            <div class="tarjeta-ref tarjeta-promedio">
+                <label class="Titulo">Valor Promedio</label>
+                <p>{{ detalle["VALOR PROMEDIO"] if detalle else '-' }}</p>
+            </div>
+
+            <!-- BLOQUE DERECHO: FILA INFERIOR -->
+            <div class="tarjeta-ref tarjeta-segun">
+                <label class="Titulo">{{ titulo_principal }}</label>
+                <p>{% if detalle %}{{ detalle["VALOR REFERENCIA"] }}{% else %}-{% endif %}</p>
+            </div>
+
+            <div class="tarjeta-ref tarjeta-fuente">
+                <label class="Titulo">Fuente</label>
+                <p>{% if detalle %}{{ detalle["FUENTE"] }}{% else %}-{% endif %}</p>
+            </div>
+
+        </div>
+
+    </div>
+</section>

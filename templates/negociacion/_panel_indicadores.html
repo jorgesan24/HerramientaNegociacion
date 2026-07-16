@@ -1,0 +1,163 @@
+<section id="panelindicadores" class="indicadores-grid">
+
+    <div class="indicador-card">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                📄
+            </div>
+
+            <div class="indicador-titulo">
+                Registros
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.registros if kpis else "--" }}
+        </div>
+
+    </div>
+
+    <div class="indicador-card" data-filtro="duplicados">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                📑
+            </div>
+
+            <div class="indicador-titulo">
+                Duplicados
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.duplicados if kpis else "--" }}
+        </div>
+
+    </div>
+
+    <div class="indicador-card" data-filtro="aceptables">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                ✅
+            </div>
+
+            <div class="indicador-titulo">
+                Aceptables
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.aceptables if kpis else "--" }}
+        </div>
+
+    </div>
+
+    <div class="indicador-card" data-filtro="renegociar">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                🔄
+            </div>
+
+            <div class="indicador-titulo">
+                Renegociar
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.renegociar if kpis else "--" }}
+        </div>
+
+    </div>
+
+    <div class="indicador-card" data-filtro="activos">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                🟢
+            </div>
+
+            <div class="indicador-titulo">
+                Activos
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.activos if kpis else "--" }}
+        </div>
+
+    </div>
+
+    <div class="indicador-card" data-filtro="no_activos">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                🔴
+            </div>
+
+            <div class="indicador-titulo">
+                Inactivos
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.no_activos if kpis else "--" }}
+        </div>
+
+    </div>
+
+    <div class="indicador-card">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                📅
+            </div>
+
+            <div class="indicador-titulo">
+                Fecha Proceso
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.fecha if kpis else "--" }}
+        </div>
+
+    </div>
+
+    <div class="indicador-card">
+
+        <div class="indicador-header">
+
+            <div class="indicador-icono">
+                📊
+            </div>
+
+            <div class="indicador-titulo">
+                Cobertura
+            </div>
+
+        </div>
+
+        <div class="indicador-valor">
+            {{ kpis.cobertura if kpis else "--" }}
+        </div>
+
+    </div>
+
+</section>

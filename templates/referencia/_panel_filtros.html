@@ -1,0 +1,122 @@
+<!-- ============================================== -->
+<!-- PANEL DE FILTROS -->
+<!-- ============================================== -->
+
+<section class="ref-panel-filtros">
+
+    <!-- CONTENEDOR 1: TARJETAS Y ENCABEZADO -->
+    <div class="ref-bloque-superior">
+
+        <div class="ref-panel-header">
+
+            <div class="ref-header-icono">
+                🔎
+            </div>
+
+            <div class="ref-header-texto">
+
+                <h3>Buscar referencia</h3>
+
+                <p>
+                    Seleccione criterio de busqueda
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- =============================== -->
+        <!-- TIPO DE BÚSQUEDA (3 COLUMNAS EXACTAS) -->
+        <!-- =============================== -->
+        <div class="grupo-filtros">
+
+            <label class="card-radio">
+
+                <input 
+                    type="radio" 
+                    name="tipo_filtro" 
+                    value="CUM" 
+                    id="rbCum"
+                    {% if tipo_filtro == "CUM" %}checked{% endif %}>                
+                
+                <div class="card-radio-body">
+                    <span class="check">✔</span>
+                    <span class="icono">💊</span>
+                    <span class="titulo">CUM</span>
+                </div>
+
+            </label>
+
+            <label class="card-radio">
+
+                <input 
+                    type="radio" 
+                    name="tipo_filtro" 
+                    value="P. ACTIVO" 
+                    id="rbActivo"
+                    {% if tipo_filtro == "P. ACTIVO" %}checked{% endif %}>
+
+                <div class="card-radio-body">
+                    <span class="check">✔</span>
+                    <span class="icono">🧪</span>
+                    <span class="titulo">Principio Activo</span>
+                </div>
+
+            </label>
+
+            <label class="card-radio">
+
+                <input 
+                    type="radio" 
+                    name="tipo_filtro" 
+                    value="GRUPO TERAPEUTICO" 
+                    id="rbGrupo"
+                    {% if tipo_filtro == "GRUPO TERAPEUTICO" %}checked{% endif %}>
+
+                <div class="card-radio-body">
+                    <span class="check">✔</span>
+                    <span class="icono">📚</span>
+                    <span class="titulo">Grupo Terapéutico</span>
+                </div>
+
+            </label>
+
+            <label class="card-radio">
+
+                <input 
+                    type="radio" 
+                    name="tipo_filtro" 
+                    value="NIT"
+                    id="rbNit"
+                    {% if tipo_filtro == "NIT" %}checked{% endif %}>
+
+                <div class="card-radio-body">
+                    <span class="check">✔</span>
+                    <span class="icono">🏢</span>
+                    <span class="titulo">NIT</span>
+                </div>
+
+            </label>
+
+            <label class="card-radio">
+
+                <input 
+                    type="radio" 
+                    name="tipo_filtro" 
+                    value="REGIONAL"
+                    id="rbRegional"
+                    {% if tipo_filtro == "REGIONAL" %}checked{% endif %}>
+
+                <div class="card-radio-body">
+                    <span class="check">✔</span>
+                    <span class="icono">📍</span>
+                    <span class="titulo">Regional</span>
+                </div>
+
+            </label>
+
+        </div>
+
+    </div>    
+
+</section>

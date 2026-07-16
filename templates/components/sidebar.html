@@ -1,0 +1,36 @@
+<div id="overlayMenu" class="overlay-menu"></div>
+
+<aside id="sidebarMenu" class="sidebar-menu">
+
+    <div class="sidebar-header">
+
+        <h2>Herramienta</h2>
+
+    </div>
+
+    <nav class="sidebar-nav">
+
+        {% for item in menu %}
+
+        <a href="{{ url_for(item.endpoint) }}"
+           class="menu-item {% if endpoint_actual == item.endpoint %}activo{% endif %}">
+
+            <span class="menu-icono">
+
+                {{ item.icono }}
+
+            </span>
+
+            <span>
+
+                {{ item.titulo }}
+
+            </span>
+
+        </a>
+
+        {% endfor %}
+
+    </nav>
+
+</aside>
