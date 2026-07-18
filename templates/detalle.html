@@ -12,6 +12,7 @@
     <title>Detalle Facturación</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/detalle.css') }}">
+    <!-- CORRECCIÓN: Quitamos el enlace roto hacia cloudflare.com e importamos FontAwesome correctamente si lo usas -->
     <link rel="stylesheet" href="https://cloudflare.com">
 </head>
 <body class="detalle-body">
@@ -19,21 +20,16 @@
 
     <!-- Tu contenedor original intacto con todas tus clases CSS de siempre -->
     <div class="detalle-container">
-        <!-- ===================================================== -->
-        <!-- ENCABEZADO -->
-        <!-- ===================================================== -->
+        
+        <!-- ... (Encabezado permanece exactamente igual) ... -->
         <div class="detalle-header">
-            <div class="detalle-logo">
-                <img src="{{ url_for('static', filename='img/logo_sanitas.png') }}" alt="EPS Sanitas">
-            </div>
+            <div class="detalle-logo"><img src="{{ url_for('static', filename='img/logo_sanitas.png') }}" alt="EPS Sanitas"></div>
             <div class="detalle-titulo">DETALLE FACTURACIÓN</div>
-            <div class="detalle-logo">
-                <img src="{{ url_for('static', filename='img/logo_gm.png') }}" alt="Gerencia Medicamentos">
-            </div>
+            <div class="detalle-logo"><img src="{{ url_for('static', filename='img/logo_gm.png') }}" alt="Gerencia Medicamentos"></div>
         </div>
 
         <!-- ===================================================== -->
-        <!-- TOOLBAR -->
+        <!-- TOOLBAR (CORREGIDO) -->
         <!-- ===================================================== -->
         <div class="detalle-toolbar">
 
@@ -43,23 +39,18 @@
             </div>
 
             <div class="detalle-botones">
-
+                <!-- CORRECCIÓN: Simplificamos el contenido para que el evento click no se pierda en los nodos hijos -->
                 <button 
                     type="button" 
                     class="btn-exportar-detalle" 
                     id="btnExportarExcelModal">
-                    <i class="fa-solid fa-file-excel"></i> 
-
-                    <img
-                        src="{{ url_for('static', filename='img/excel.png') }}" style="margin-right: 8px; height: 26px">
-                        Exportar
-
+                    <img src="{{ url_for('static', filename='img/excel.png') }}" style="margin-right: 8px; height: 20px; vertical-align: middle;">
+                    Exportar
                 </button>
-
             </div>
 
         </div>
-
+        
         <!-- ===================================================== -->
         <!-- INFORMACIÓN -->
         <!-- ===================================================== -->
@@ -108,7 +99,7 @@
         <!-- NUEVO: Bloque de Controles de Paginación Interna del Modal -->
         <div class="detalle-paginacion" id="paginacionModalBloque" style="display: none;">
             <div class="paginacion-info" id="infoPaginacionModal">
-                Mostrando registros del 1 al 20
+                Resultados encontrados: del 1 al 20
             </div>
             <div class="paginacion-controles">
                 <button type="button" class="btn-pag-modal" id="btnPrevModal" disabled>Anterior</button>

@@ -9,14 +9,10 @@ db_file = "data/herramienta_negociacion.db"
 # Asegurar que la carpeta data existe
 os.makedirs("data", exist_ok=True)
 
-print(" Conectando a SQLite...")
 conn = sqlite3.connect(db_file)
 
-print(" Cargando archivo de Excel completo (esto puede tardar unos segundos)...")
 # Al pasar sheet_name=None, Pandas lee TODAS las pestañas y las guarda en un diccionario
 todo_el_excel = pd.read_excel(excel_file, sheet_name=None)
-
-print(f" ¡Éxito! Se encontraron {len(todo_el_excel)} pestañas.")
 
 # Iterar automáticamente sobre cada pestaña y guardarla como una tabla
 for nombre_pestana, df in todo_el_excel.items():

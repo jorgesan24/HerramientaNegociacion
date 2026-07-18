@@ -32,4 +32,44 @@ Referencia
     <!-- Asegúrate de cargar tu archivo modular al final de la página -->
     src="{{ url_for('static', filename='js/negociacion.js') }}"
 </script>
+
+{% if sin_resultados %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    Mensajes.warning(
+        "No se encontró ningún medicamento con el criterio ingresado."
+    );
+
+});
+</script>
+{% endif %}
+
+<!-- Coloca esto al final de tu block scripts en referencia.html -->
+{% if filtro and total_registros == 0 %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Validación preventiva por si el objeto Mensajes o Swal no ha cargado en la página
+        if (typeof Mensajes !== "undefined" && typeof Mensajes.info === "function") {
+            Mensajes.info(
+                "No se encontraron medicamentos que coincidan con el criterio ingresado. Intente con otro código o descripción.", 
+                "Sin Coincidencias"
+            );
+        } else if (typeof Swal !== "undefined") {
+            // Plan B de respaldo directo con Swal por si el archivo JS modular se demora en leer
+            Swal.fire({
+                icon: "info",
+                title: "Sin Coincidencias",
+                text: "No se encontraron medicamentos que coincidan con el criterio ingresado.",
+                confirmButtonText: "Aceptar",
+                confirmButtonColor: "#1D5FB8",
+                allowOutsideClick: false,
+                heightAuto: false
+            });
+        }
+    });
+</script>
+{% endif %}
+
+
 {% endblock %}

@@ -3,6 +3,18 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("negociacion.js cargado");    
     console.log("Filtros KPI:", filtrosKPI);
 
+    const esMovil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (esMovil) {
+
+        Mensajes.movil(
+            "Este tipo de archivo solo puede cargarse desde un computador."
+        );
+
+        return;
+
+    }
+
     const hojas = document.querySelectorAll(".item-hoja");
 
     hojas.forEach(item => {
@@ -39,19 +51,12 @@ $(document).ready(function () {
     const tabla = $("#tablaNegociacion").DataTable({
 
         pageLength:15,
-
         ordering:true,
-
         searching:true,
-
         paging:true,
-
         info:false,
-
         lengthChange:false,
-
         autoWidth:false,
-
         responsive:false,
 
         columnDefs: [

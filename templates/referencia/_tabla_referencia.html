@@ -1,6 +1,6 @@
 <div class="panel-tabla">
 
-    <div class="ref-registros-contador">
+    <div class="ref-registros-contador" id="contadorResultadosBuscador">
         Resultados encontrados:
         <strong>{{ total_registros }}</strong>
          |
@@ -25,36 +25,63 @@
                     <th>Cobertura</th>
                 </tr>
             </thead>
+            
+            <!-- CORRECCIÓN: Le añadimos id a la etiqueta tbody -->
+            <tbody id="tbodyResultadosBuscador">
 
-            <tbody>
-                {% for medicamento in resultados %}
-                <tr class="fila-medicamento" data-codigo="{{ medicamento['CÓDIGO'] }}">
-                    <td>
-                        {% if tipo_filtro == "REGIONAL" %}
-                        <a href="/referencia?codigo={{ medicamento['CÓDIGO'] }}&regional={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina }}">
-                            {{ medicamento["CÓDIGO"] }}
-                        </a>
-                        {% else %}
-                        <a href="/referencia?codigo={{ medicamento['CÓDIGO'] }}&filtro={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina }}">
-                            {{ medicamento["CÓDIGO"] }}
-                        </a>
-                        {% endif %}
-                    </td>
-                    <td>{{ medicamento["DESCRIPCIÓN INVIMA"] }}</td>
-                    <td>{{ medicamento["DESCRIPCIÓN"] }}</td>
-                    <td>{{ medicamento["P. ACTIVO"] }}</td>
-                    <td>{{ medicamento["GRUPO TERAPEUTICO"] }}</td>
-                    <td>{{ medicamento["COBERTURA"] }}</td>
-                    <td>{{ medicamento["ESTADO INVIMA"] }}</td>
-                </tr>
-                {% endfor %}
+                {% if resultados %}
+
+                    {% for medicamento in resultados %}
+
+                    <tr class="fila-medicamento" data-codigo="{{ medicamento['CÓDIGO'] }}">
+
+                        <td>
+
+                            {% if tipo_filtro == "REGIONAL" %}
+
+                            <a href="/referencia?codigo={{ medicamento['CÓDIGO'] }}&regional={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina }}">
+                                {{ medicamento["CÓDIGO"] }}
+                            </a>
+
+                            {% else %}
+
+                            <a href="/referencia?codigo={{ medicamento['CÓDIGO'] }}&filtro={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina }}">
+                                {{ medicamento["CÓDIGO"] }}
+                            </a>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>{{ medicamento["DESCRIPCIÓN INVIMA"] }}</td>
+                        <td>{{ medicamento["DESCRIPCIÓN"] }}</td>
+                        <td>{{ medicamento["P. ACTIVO"] }}</td>
+                        <td>{{ medicamento["GRUPO TERAPEUTICO"] }}</td>
+                        <td>{{ medicamento["COBERTURA"] }}</td>
+                        <td>{{ medicamento["ESTADO INVIMA"] }}</td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:40px;color:#777;font-weight: 500;">
+                            No hay información para mostrar
+                        </td>
+                    </tr>
+
+                {% endif %}
+
             </tbody>
+
         </table>
 
     </div> <!-- CIERRE DE detalle-tabla -->
 
     <!-- PAGINACIÓN ESTILIZADA DE MANERA HOMOGÉNEA -->
-    <div class="paginacion">
+    <div class="paginacion" id="bloquePaginacionBuscador">
         {% if pagina > 1 %}
             {% if tipo_filtro == "REGIONAL" %}
                 <a href="/referencia?regional={{ filtro }}&tipo_filtro={{ tipo_filtro }}&pagina={{ pagina-1 }}">
@@ -67,7 +94,7 @@
             {% endif %}
         {% endif %}
 
-        <span>
+        <span id="txtPaginaActualBuscador">
             Página {{ pagina }} de {{ total_paginas }}
         </span>
 

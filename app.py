@@ -245,6 +245,17 @@ def referencia():
 
         medicamento = detalle
 
+        filtro = filtro.strip()
+
+    if filtro == "":
+
+        resultados = []
+        detalle = None
+        medicamento = None
+
+        total_registros = 0
+        total_paginas = 1
+
     return render_template(
         "referencia/referencia.html",
         resultados=resultados,
@@ -890,18 +901,28 @@ def construir_valor_objetivo(datos):
 
     for _, fila in datos.iterrows():
 
-        ofertado = fila["VALOR OFERTADO"]
-        regulacion = fila["REGULACION"]
-        nt = fila["NT"]
-        pm = fila["PM"]
-        referencia = fila["REFERENCIA"]
+        # -----------------------------------------------------------
+        # Conversión Numérica Segura (Previene el error TypeError)
+        # -----------------------------------------------------------
+        # pd.to_numeric con errors='coerce' convierte texto inválido o vacío en NaN (nulo)
+        ofertado = pd.to_numeric(fila.get("VALOR OFERTADO"), errors='coerce')
+        regulacion = pd.to_numeric(fila.get("REGULACION"), errors='coerce')
+        nt = pd.to_numeric(fila.get("NT"), errors='coerce')
+        pm = pd.to_numeric(fila.get("PM"), errors='coerce')
+        referencia = pd.to_numeric(fila.get("REFERENCIA"), errors='coerce')
+
+        # Si el valor ofertado no es un número válido, no se puede procesar la fila
+        if pd.isna(ofertado):
+            valor_objetivo.append(None)
+            origen.append("VALOR OFERTADO INVÁLIDO")
+            desviacion.append(None)
+            validacion.append("REVISAR")
+            continue
 
         # -------------------------
         # Determinar valor objetivo
         # -------------------------
-
         if pd.notna(regulacion):
-
             if ofertado < regulacion:
                 objetivo = ofertado
                 origen_obj = "OPCIÓN EPS SANITAS"
@@ -910,42 +931,33 @@ def construir_valor_objetivo(datos):
                 origen_obj = "REGULACIÓN"
 
         elif pd.notna(nt):
-
             objetivo = nt
             origen_obj = "NT"
 
         elif pd.notna(pm):
-
             objetivo = pm
             origen_obj = "PM"
 
         elif pd.notna(referencia):
-
             objetivo = referencia
             origen_obj = "REFERENCIA"
 
         else:
-
             objetivo = ofertado
             origen_obj = "OPCIÓN EPS SANITAS"
 
         # -------------------------
-        # Desviación
+        # Desviación (Validación matemática limpia)
         # -------------------------
-
-        if objetivo > 0:
-
+        if pd.notna(objetivo) and objetivo > 0:
             des = (ofertado - objetivo) / objetivo
-
         else:
-
             des = None
 
         # -------------------------
         # Validación
         # -------------------------
-
-        if ofertado <= objetivo:
+        if pd.notna(objetivo) and ofertado <= objetivo:
             estado = "ACEPTAR"
         else:
             estado = "RENEGOCIAR"
@@ -955,6 +967,7 @@ def construir_valor_objetivo(datos):
         desviacion.append(des)
         validacion.append(estado)
 
+    # Inyección final de resultados al DataFrame
     datos["VALOR OBJETIVO"] = valor_objetivo
     datos["ORIGEN"] = origen
     datos["DESVIACION"] = desviacion
@@ -1145,4 +1158,4 @@ def inject_menu():
     )
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

@@ -244,6 +244,12 @@ BOTONES UNIFICADOS (PRINCIPAL Y SECUNDARIO)
     transition: background 0.2s;
 }
 
+.btn-secundario:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    filter:grayscale(100%);
+}
+
 .btn-principal:hover,
 .btn-secundario:hover {
     background: #0D47A1;
@@ -253,6 +259,28 @@ BOTONES UNIFICADOS (PRINCIPAL Y SECUNDARIO)
     display: block;
     width: 100%;
     text-decoration: none;
+}
+
+/*==============================================================*
+ MENSAJES DE BÚSQUEDA
+*==============================================================*/
+
+.mensaje-busqueda{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:14px 18px;
+    margin-bottom:15px;
+    border-radius:10px;
+    background:#FFF8E5;
+    border:1px solid #FFE08A;
+    color:#7A5B00;
+    font-weight:600;
+}
+
+.mensaje-busqueda i{
+    color:#F4B400;
+    font-size:18px;
 }
 
 /*==============================================================
@@ -422,11 +450,13 @@ ESTILOS INTERNOS DE LA TABLA (IGUAL AL MODAL)
 }
 
 .tabla-detalle tbody td {
-    padding: 7px; /* Ajuste del padding para que no se vea colapsado */
     border-bottom: 1px solid #EEF2F7;
     font-size: 11px;
     color: #333333;
     white-space: nowrap; /* Evita saltos de línea */
+    padding: 4px 8px;          /* REDUCCIÓN: Bajamos de 7px a 4px arriba/abajo y dejamos 8px a los lados */
+    line-height: 0,9;          /* Fuerza a que el texto ocupe un espacio vertical muy ajustado */
+    vertical-align: middle;    /* Centra el texto verticalmente dentro de la fila reducida */
 }
 
 /* Cebrado e interactividad */

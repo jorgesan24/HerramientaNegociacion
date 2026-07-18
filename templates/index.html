@@ -13,51 +13,8 @@ Referencia
 
 <div class="referencia-layout">
 
-    <!-- Bloque para mostrar el error del celular si falla el backend -->
-    {% if mensaje %}
-        <div class="alerta-contenedor {% if '❌' in mensaje %}alerta-error{% else %}alerta-exito{% endif %}">
-            <span class="alerta-icono">{% if '❌' in mensaje %}⚠️{% else %}✨{% endif %}</span>
-            <p class="alerta-texto">{{ mensaje }}</p>
-        </div>
-    {% endif %}
-
     {% include "inicio/_botones.html" %}
 
 </div>
 
-{% endblock %}
-
-{% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const inputExcel = document.getElementById('archivo_excel');
-    
-    if (inputExcel) {
-        inputExcel.addEventListener('change', function() {
-            // CORREGIDO: Se agrega [0] para evaluar el archivo seleccionado
-            const archivo = this.files[0]; 
-            
-            if (archivo) {
-                const nombreArchivo = archivo.name;
-                const extension = nombreArchivo.split('.').pop().toLowerCase();
-                const extensionesValidas = ['xlsx', 'xls'];
-                
-                // 1. Validar la extensión del archivo
-                if (!extensionesValidas.includes(extension)) {
-                    alert('❌ Error: Solo se permiten archivos reales de Excel (.xlsx o .xls).');
-                    this.value = ''; // Limpia la selección
-                    return;
-                }
-                
-                // 2. Validar si es un acceso directo virtual (0 bytes)
-                if (archivo.size === 0) {
-                    alert('❌ El archivo parece ser un acceso directo virtual de la nube. Por favor, descárgalo primero a la memoria de tu celular.');
-                    this.value = ''; // Limpia la selección
-                    return;
-                }
-            }
-        });
-    }
-});
-</script>
 {% endblock %}

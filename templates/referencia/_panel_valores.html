@@ -20,29 +20,64 @@
 
             <!-- BLOQUE IZQUIERDO: COLUMNA VERTICAL -->
             <div class="tarjeta-ref tarjeta-acto">
-                <label class="Titulo">Acto Administrativo</label>
-                <p>{{ acto_administrativo if acto_administrativo else '-' }}</p>
+
+                <label class="Titulo">
+                    Acto Administrativo
+                </label>
+
+                <p>
+                    {{ acto_administrativo if acto_administrativo else '-' }}
+                </p>
+
             </div>
 
             <div class="tarjeta-ref tarjeta-normativo">
-                <label class="Titulo">Valor Normativo</label>
-                <p>{{ valor_normativo if valor_normativo else '-' }}</p>
+
+                <label class="Titulo">
+                    Valor Normativo
+                </label>
+
+                <p>
+                    {{ valor_normativo if valor_normativo else '-' }}
+                </p>
+
             </div>
 
             <!-- BLOQUE DERECHO: FILA SUPERIOR -->
             <div class="tarjeta-ref tarjeta-maximo">
-                <label class="Titulo">Valor Máximo</label>
-                <p>{{ detalle["VALOR MAXIMO"] if detalle else '-' }}</p>
+
+                <label class="Titulo">
+                    Valor Máximo
+                </label>
+
+                <p>
+                    {{ detalle["VALOR MAXIMO"] if detalle else '-' }}
+                </p>
+
             </div>
 
             <div class="tarjeta-ref tarjeta-minimo">
-                <label class="Titulo">Valor Mínimo</label>
-                <p>{{ detalle["VALOR MINIMO"] if detalle else '-' }}</p>
+
+                <label class="Titulo">
+                    Valor Mínimo
+                </label>
+
+                <p>
+                    {{ detalle["VALOR MINIMO"] if detalle else '-' }}
+                </p>
+
             </div>
 
             <div class="tarjeta-ref tarjeta-promedio">
-                <label class="Titulo">Valor Promedio</label>
-                <p>{{ detalle["VALOR PROMEDIO"] if detalle else '-' }}</p>
+
+                <label class="Titulo">
+                    Valor Promedio
+                </label>
+
+                <p>
+                    {{ detalle["VALOR PROMEDIO"] if detalle else '-' }}
+                </p>
+                
             </div>
 
             <!-- BLOQUE DERECHO: FILA INFERIOR -->

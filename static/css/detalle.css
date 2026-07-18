@@ -169,9 +169,13 @@ TABLA CON CONTROL DE DESPLAZAMIENTO (SCROLL)
 }
 
 .tabla-detalle tbody td {
-    padding: 12px;
     border-bottom: 1px solid #EEF2F7;
-    font-size: 14px;
+    font-size: 11px;
+    color: #333333;
+    white-space: nowrap; /* Evita saltos de línea */
+    padding: 4px 8px;          /* REDUCCIÓN: Bajamos de 7px a 4px arriba/abajo y dejamos 8px a los lados */
+    line-height: 0,9;          /* Fuerza a que el texto ocupe un espacio vertical muy ajustado */
+    vertical-align: middle;    /* Centra el texto verticalmente dentro de la fila reducida */
 }
 
 .tabla-detalle tbody tr:nth-child(even) { background: #FAFCFF; }

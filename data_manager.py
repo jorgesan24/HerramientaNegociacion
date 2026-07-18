@@ -26,7 +26,18 @@ def buscar_medicamentos(filtro, tipo_filtro):
     cursor = conn.cursor()
     
     # Consulta SQL indexada y directa en disco para no saturar la RAM
-    query = f"SELECT DISTINCT * FROM referencia WHERE {columna_sql} LIKE ? ORDER BY [DESCRIPCIÓN] ASC"
+    query = f"""
+    SELECT *
+    FROM referencia
+    WHERE rowid IN
+    (
+        SELECT MIN(rowid)
+        FROM referencia
+        WHERE {columna_sql} LIKE ?
+        GROUP BY CÓDIGO
+    )
+    ORDER BY [DESCRIPCIÓN] ASC
+    """
     cursor.execute(query, (f"%{filtro}%",))
     
     resultados = [dict(row) for row in cursor.fetchall()]
@@ -66,10 +77,6 @@ def obtener_resumen(codigo):
 # ==============================================================
 def obtener_detalle_facturacion(codigo):
     cabecera = obtener_resumen(codigo)
-
-    if not cabecera:
-        print(f"DEBUG: No se encontró registro en base de datos para el código: {codigo}")
-        return None
 
     agrupador = str(cabecera.get("AGRUPADOR", "")).strip()
     expediente = str(cabecera.get("EXPEDIENTE", "")).strip()
