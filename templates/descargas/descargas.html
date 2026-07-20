@@ -85,21 +85,30 @@ Negociación
 
         </div>
 
-        <!-- SECCIÓN 4: HERRAMIENTA DE NEGOCIACIÓN WEB (VIDEO) -->
+        <!-- SECCIÓN 4: HERRAMIENTA DE NEGOCIACIÓN WEB (REPRODUCTOR OPTIMIZADO) -->
         <div class="descargas-video-seccion">
             <div class="video-titulo-bloque">
                 <h3><i class="fa-solid fa-video"></i> 4. Herramienta de Negociación WEB</h3>
                 <p>Video tutorial guiado mostrando la navegación completa de la interfaz, selección de grillas y validación de archivos móviles.</p>
                 <div class="fecha-actualizacion" style="margin-top: 8px;">
-                    <strong>Video actualizado el:</strong> <span>{{ fechas["video_tutorial"] }}</span>
+                    <strong>Soporte multimedia:</strong> <span>Servidor de streaming externo activo</span>
                 </div>
             </div>
             
-            <div class="contenedor-reproductor-video">
-                <video controls poster="{{ url_for('static', filename='img/miniatura_video.png') }}" class="reproductor-video-nativo">
-                    <source src="{{ url_for('static', filename='descargas/' ~ archivos['video_tutorial']) }}" type="video/mp4">
-                    Tu navegador no soporta la reproducción de video HTML5.
-                </video>
+            <!-- Reemplazamos el iframe problemático por un contenedor interactivo de alta calidad -->
+            <div class="contenedor-enlace-video" style="text-align: center; padding: 40px 20px; border: 2px dashed #D6E2F1; border-radius: 12px; background: #FAFCFF;">
+                <div style="font-size: 48px; color: #1565C0; margin-bottom: 15px;">
+                    <i class="fa-solid fa-circle-play"></i>
+                </div>
+                <h4 style="margin: 0 0 10px 0; color: #35506E; font-size: 16px; font-weight: 700;">Visualizar Tutorial en Google Drive</h4>
+                <p style="margin: 0 0 20px 0; color: #777777; font-size: 13px;">Para garantizar una reproducción fluida en alta definición y sin bloqueos de red, consulte el material en la plataforma oficial.</p>
+                
+                <a href="https://drive.google.com/file/d/1w5PMn7iWNL6jHf_MYd7PuUAGRyP26q9h/view?usp=drive_link" 
+                target="_blank" 
+                class="btn-descargar color-bg-excel" 
+                style="padding: 12px 24px; font-size: 14px; border-radius: 8px; box-shadow: 0 4px 12px rgba(21, 101, 192, 0.2);">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Video Tutorial
+                </a>
             </div>
         </div>
 

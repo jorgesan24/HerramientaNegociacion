@@ -1,31 +1,31 @@
 .btn-principal {
-    display: flex;
-    flex-direction: column;
-    flex: 1;                 /* Crecen uniformemente para ocupar el espacio */
-    min-width: 200px;        /* Evita que se hagan demasiado pequeños */
-    max-width: 500px;        /* Evita que se estiren demasiado en pantallas gigantes */
-    color: #1565C0;
-    text-decoration: none;
-    font-weight: 600;
-    background: #EAF3FF;
-    border-radius: 8px;
-    font-size: 6rem;
-    text-align: center;
-    padding: 40px 20px;
-    box-sizing: border-box;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 15px;
-    text-decoration: none;
-    height: 100%;
-    /* Sombra suave inicial */
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.10);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  flex: 1;                 /* Crecen uniformemente para ocupar el espacio */
+  min-width: 200px;        /* Evita que se hagan demasiado pequeños */
+  max-width: 500px;        /* Evita que se estiren demasiado en pantallas gigantes */
+  color: #1565C0;
+  text-decoration: none;
+  font-weight: 600;
+  background: #EAF3FF;
+  border-radius: 8px;
+  font-size: 6rem;
+  text-align: center;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 15px;
+  text-decoration: none;
+  height: 100%;
+  /* Sombra suave inicial */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.10);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .btn-principal:hover {
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25), 0 6px 15px rgba(0, 0, 0, 0.15);
-    transform: translateY(-4px); /* Sube un poco más para acompañar la sombra */ 
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25), 0 6px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px); /* Sube un poco más para acompañar la sombra */ 
 }
 
 /* Forzar al texto a quedarse arriba firmemente */
@@ -36,8 +36,13 @@
 }
 
 .btn-negociacion {
-    color: #eff2f5;
-    background: #9ab4f5d7;
+  color: #eff2f5;
+  background: #a6bdf7d7;
+}
+
+.btn-descargas {
+  color: #eff2f5;
+  background: #7c9ff8d7;
 }
 
 .botones-menu {
