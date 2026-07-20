@@ -3,17 +3,54 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("negociacion.js cargado");    
     console.log("Filtros KPI:", filtrosKPI);
 
-    const esMovil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    // ==============================================================
+    // VALIDACIÓN DE ARCHIVOS DESDE DRIVE EN MÓVILES (CORREGIDO)
+    // ==============================================================
+    const inputArchivoNegociacion = document.getElementById("archivoExcelNegociacion") || document.querySelector('input[type="file"]');
 
-    if (esMovil) {
+    if (inputArchivoNegociacion) {
+        inputArchivoNegociacion.addEventListener("change", function (evento) {
+            const archivo = evento.target.files[0];
+            
+            if (!archivo) return;
 
-        Mensajes.movil(
-            "Este tipo de archivo solo puede cargarse desde un computador."
-        );
+            console.log("-> Archivo cargado. Nombre:", archivo.name, "| Tamaño:", archivo.size);
 
-        return;
+            // Validamos si el archivo proviene de un URI virtual de Drive (típico en Android/iOS)
+            // O si el tamaño reportado es 0 bytes o el nombre tiene extensiones temporales de la nube
+            const esDesdeDrive = archivo.name.includes(".driveextension") || 
+                                archivo.name.startsWith("content://") || 
+                                archivo.size === 0;
 
+            if (esDesdeDrive) {
+                // Detenemos cualquier procesamiento del navegador para evitar que cierre la página
+                evento.preventDefault();
+                evento.stopPropagation();
+                this.value = ""; // Limpiamos el input para proteger el sistema
+
+                console.log("-> Intento de carga detectado desde Drive en dispositivo móvil. Bloqueando...");
+
+                // Invocamos tu mensaje modular nativo de SweetAlert2 de forma controlada
+                if (typeof Mensajes !== "undefined" && typeof Mensajes.movil === "function") {
+                    Mensajes.movil(
+                        "No es posible cargar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el archivo Excel a la memoria interna de su dispositivo e inténtelo nuevamente.",
+                        "Archivo no válido"
+                    );
+                } else if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Archivo no válido",
+                        text: "No es posible cargar archivos directamente desde Google Drive en dispositivos móviles. Descárguelo a la memoria local.",
+                        confirmButtonText: "Aceptar",
+                        confirmButtonColor: "#1565C0",
+                        allowOutsideClick: false,
+                        heightAuto: false
+                    });
+                }
+            }
+        });
     }
+
 
     const hojas = document.querySelectorAll(".item-hoja");
 
@@ -379,3 +416,68 @@ chkOtro.addEventListener("change", function(){
 
 });
 
+// ==============================================================
+// BLINDAJE DE SEGURIDAD PARA ENVÍO DE ARCHIVOS (FORM SUBMIT)
+// ==============================================================
+document.addEventListener("DOMContentLoaded", function() {
+    // Buscamos el formulario de cambio de archivo usando su clase nativa
+    const formCambiar = document.querySelector(".form-cambiar");
+
+    if (formCambiar) {
+        formCambiar.addEventListener("submit", function (evento) {
+            // Buscamos el input file dentro de este formulario
+            const inputFile = this.querySelector('input[type="file"]');
+            
+            if (inputFile && inputFile.files && inputFile.files.length > 0) {
+                const archivo = inputFile.files[0];
+                console.log("-> Git interceptando Submit. Archivo a enviar:", archivo.name, "| Tamaño:", archivo.size);
+
+                // Criterios estrictos para identificar un archivo virtual de Google Drive en celulares
+                const esDesdeDrive = archivo.name.includes(".driveextension") || 
+                                     archivo.name.startsWith("content://") || 
+                                     archivo.size === 0;
+
+                if (esDesdeDrive) {
+                    // FRENAMOS EN SECO EL SUBMIT ANTES DE QUE VIAJE A FLASK
+                    evento.preventDefault();
+                    evento.stopPropagation();
+                    
+                    inputFile.value = ""; // Vaciamos el campo por seguridad
+                    console.warn("-> Envío cancelado: El archivo proviene de Google Drive Móvil.");
+
+                    // Disparamos tu alerta corporativa de SweetAlert2
+                    if (typeof Mensajes !== "undefined" && typeof Mensajes.movil === "function") {
+                        Mensajes.movil(
+                            "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
+                            "Archivo no válido"
+                        );
+                    } else if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Archivo no válido",
+                            text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Descárguelo a la memoria local.",
+                            confirmButtonText: "Aceptar",
+                            confirmButtonColor: "#1565C0",
+                            allowOutsideClick: false,
+                            heightAuto: false
+                        });
+                    }
+                } else {
+                    // SI EL ARCHIVO ES VÁLIDO (PC o Memoria Local Móvil):
+                    // Lanzamos el spinner para dar excelente feedback visual mientras Flask procesa
+                    if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            title: "Procesando Archivo",
+                            text: "Analizando la estructura de la negociación, por favor espere...",
+                            allowOutsideClick: false,
+                            showConfirmButton: false,
+                            heightAuto: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+                    }
+                    console.log("-> Archivo verificado. Permitiendo viaje síncrono a Flask con éxito.");
+                }
+            }
+        });
+    }
+});

@@ -1147,8 +1147,48 @@ MENU = [
         "titulo": "Tabla de Negociación",
         "icono": "🤝",
         "endpoint": "negociacion"
+    },
+    {
+        "titulo": "Descargas",
+        "icono": "📥",
+        "endpoint": "descargas"
     }
 ]
+
+@app.route("/descargas")
+def descargas():
+    # Ruta física hacia la carpeta de descargas dentro de static
+    carpeta_descargas = os.path.join(app.root_path, 'static', 'descargas')
+    
+    # Mapeo exacto de los nombres de tus archivos reales en el servidor
+    archivos_sistema = {
+        "malla_invima": "malla_invima.xlsx",
+        "malla_regulacion": "malla_regulacion_consolidado.xlsx",
+        "instructivo": "instructivo_herramienta_negociacion_2026.pdf",
+        "video_tutorial": "herramienta_negociacion_web.mp4"
+    }
+    
+    fechas = {}
+    
+    # Función para extraer de forma segura la fecha de última modificación de cada archivo
+    def obtener_fecha_archivo(nombre_archivo):
+        ruta_completa = os.path.join(carpeta_descargas, nombre_archivo)
+        if os.path.exists(ruta_completa):
+            timestamp = os.path.getmtime(ruta_completa)
+            # Formato corporativo: Día/Mes/Año - Hora:Minutos
+            return datetime.fromtimestamp(timestamp).strftime('%d/%m/%Y - %I:%M %p')
+        return "Pendiente de carga"
+
+    # Calculamos de forma dinámica la fecha para cada elemento
+    for clave, nombre_real in archivos_sistema.items():
+        fechas[clave] = obtener_fecha_archivo(nombre_real)
+
+    return render_template(
+        "descargas/descargas.html", 
+        fechas=fechas,
+        archivos=archivos_sistema
+    )
+
 
 @app.context_processor
 def inject_menu():
