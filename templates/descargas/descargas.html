@@ -40,7 +40,7 @@ Negociación
                 </div>
                 <div class="card-descarga-accion">
                     <a href="{{ url_for('static', filename='descargas/' ~ archivos['malla_invima']) }}" download class="btn-descargar color-bg-excel">
-                        <i class="fa-solid fa-download"></i> Descargar Malla
+                        <i class="fa-solid fa-download"></i> Descargar
                     </a>
                 </div>
             </div>
@@ -59,7 +59,7 @@ Negociación
                 </div>
                 <div class="card-descarga-accion">
                     <a href="{{ url_for('static', filename='descargas/' ~ archivos['malla_regulacion']) }}" download class="btn-descargar color-bg-excel">
-                        <i class="fa-solid fa-download"></i> Descargar Consolidado
+                        <i class="fa-solid fa-download"></i> Descargar
                     </a>
                 </div>
             </div>
@@ -67,7 +67,7 @@ Negociación
             <!-- TARJETA 3: INSTRUCTIVO HERRAMIENTA DE NEGOCIACIÓN 2026 -->
             <div class="card-descarga">
                 <div class="card-descarga-icono color-pdf">
-                    <i class="fa-solid fa-file-pdf"></i>
+                    <img src="{{ url_for('static', filename='img/pdf-icon.svg') }}" alt="pdf Icon" style="height: 50px; width: 50px;" >
                 </div>
                 <div class="card-descarga-info">
                     <h3>3. Instructivo Herramienta de Negociación 2026</h3>
