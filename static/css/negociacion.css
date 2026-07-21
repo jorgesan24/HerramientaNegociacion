@@ -854,8 +854,8 @@ TABLA EXPANDIDA
 /* Cuando el panel izquierdo está oculto */
 
 .panel-tabla.expandida{
-    margin-left:-300px;
-    width:calc(100% + 245px);
+    margin-left:-275px;
+    width:calc(100% + 270px);
 }
 
 /*==============================================================
