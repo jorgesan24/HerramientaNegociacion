@@ -1,0 +1,198 @@
+/*=========================================================
+FOOTER CORPORATIVO SANEM
+=========================================================*/
+
+.sanem-footer{
+    background:#0B3B82;
+    border-top:4px solid #1D7CE3;
+    margin-top:0px;
+    padding:6px;
+}
+
+.footer-contenido{
+    max-width:1450px;
+    margin:auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/*--------------------------------*/
+
+.footer-izquierda{
+    width:25%;
+    display:flex;
+    justify-content:flex-start;
+}
+
+.footer-objetivos{
+    width:230px;
+    opacity:.95;
+    filter: brightness(0) invert(1);
+    transition:.25s;
+}    
+
+
+.footer-objetivos:hover{
+    transform:scale(1.05);
+}
+
+/*--------------------------------*/
+
+.footer-centro{
+    width:50%;
+    text-align:center;
+}
+
+.footer-centro h3{
+    margin:0;
+    color:#FFFFFF;
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:1px;
+}
+
+.footer-centro p{
+    margin:6px 0 14px;
+    color:#DDEAF8;
+    font-size:15px;
+    line-height:22px;
+}
+
+.footer-centro span{
+    display:block;
+    color:#8CC8FF;
+    font-size:13px;
+}
+
+.footer-centro strong{
+    display:block;
+    margin-top:3px;
+    color:#FFFFFF;
+    font-size:16px;
+}
+
+/*--------------------------------*/
+
+.footer-derecha{
+    width:25%;
+    display:flex;
+    justify-content:flex-end;
+}
+
+.footer-gm{
+    width:135px;
+    transition:.25s;
+}
+
+.footer-gm:hover{
+    transform:scale(1.05);
+}
+
+/*=========================================================
+RESPONSIVE
+=========================================================*/
+
+@media (max-width:1200px){
+
+    .footer-contenido{
+
+        padding:20px;
+
+        gap:25px;
+
+    }
+
+    .footer-objetivos{
+
+        width:180px;
+
+    }
+
+    .footer-gm{
+
+        width:110px;
+
+    }
+
+}
+
+@media (max-width:900px){
+
+    .footer-contenido{
+
+        flex-direction:column;
+
+        text-align:center;
+
+        gap:20px;
+
+    }
+
+    .footer-izquierda,
+    .footer-centro,
+    .footer-derecha{
+
+        width:100%;
+
+        justify-content:center;
+
+    }
+
+    .footer-objetivos{
+
+        width:220px;
+
+    }
+
+    .footer-gm{
+
+        width:120px;
+
+    }
+
+}
+
+@media (max-width:576px){
+
+    .sanem-footer{
+
+        padding:20px 10px;
+
+    }
+
+    .footer-objetivos{
+
+        width:180px;
+
+    }
+
+    .footer-centro h3{
+
+        font-size:24px;
+
+    }
+
+    .footer-centro p{
+
+        font-size:14px;
+
+        line-height:20px;
+
+    }
+
+    .footer-centro strong{
+
+        font-size:15px;
+
+    }
+
+    .footer-gm{
+
+        width:90px;
+
+    }
+
+}

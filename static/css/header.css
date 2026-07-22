@@ -1,38 +1,100 @@
-/* ============================= */
-/* HEADER                        */
-/* ============================= */
-
-.header-principal{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:#eef5ff;
-    border-radius:18px;
-    padding:6px 14px;
-    box-shadow:0 5px 18px rgba(0,0,0,.08);
-    margin-bottom:14px;
+/*==============================================================
+ESTILOS DEL ENCABEZADO SUPERIOR (MÁS GRANDE)
+==============================================================*/
+/* Fijamos el header arriba para que no flote de forma descontrolada */
+.sanem-header {
+    width: 100%;
+    height: 85px;
+    background: linear-gradient(90deg, #0A3A82 0%, #072355 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(7, 35, 85, 0.15);
+    font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
-.logo-panel{
-    width:170px;
-    display:flex;
-    align-items:center;
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 25px;
 }
 
-.logo-panel img{
-    max-height:58px;
-    max-width:100%;
+/* Botón de las 3 Líneas */
+.btn-menu-trigger {
+    background: transparent;
+    border: none;
+    color: #FFFFFF !important;
+    font-size: 24px; /* Icono más grande */
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
 }
 
-.titulo-panel-header{
-    flex:1;
-    text-align:center;
+.btn-menu-trigger:hover {
+    transform: scale(1.1);
 }
 
-.titulo-panel-header h1{
-    color:#0b4ea2;
-    font-size:38px;
-    font-weight:700;
-    margin:0;
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-iso {
+    height: 60px; /* Isotipo más grande */
+    width: auto;
+}
+
+.brand-name {
+    color: #FFFFFF;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.header-center h1 {
+    color: #FFFFFF;
+    font-size: 26px; /* Título central más imponente */
+    font-weight: 600;
+    margin: 0;
+    opacity: 0.95;
+    letter-spacing: 0.3px;
     text-align: center;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.user-avatar-block {
+    color: #FFFFFF;
+    font-size: 28px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.logo-sanitas-img {
+    height: 60px;
+    width: auto;
+}
+
+/*==============================================================
+ESTRUCTURA DE COMPENSACIÓN DE PANTALLA (LAYOUT FLEX)
+==============================================================*/
+.sanem-main-wrapper {
+    display: flex;
+    width: 100%;
+    margin-top: 85px; /* Empuja el contenido debajo del nuevo header alto */
+    height: calc(100vh - 85px);
+    box-sizing: border-box;
 }

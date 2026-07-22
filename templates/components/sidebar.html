@@ -4,33 +4,50 @@
 
     <div class="sidebar-header">
 
-        <h2>Herramienta</h2>
+        <img
+            src="{{ url_for('static', filename='img/SANEM.png') }}"
+            class="logo-sidebar"
+            alt="SANEM">
 
     </div>
 
     <nav class="sidebar-nav">
 
         {% for item in menu %}
-
         <a href="{{ url_for(item.endpoint) }}"
            class="menu-item {% if endpoint_actual == item.endpoint %}activo{% endif %}">
 
             <span class="menu-icono">
 
-                {{ item.icono }}
+                {% if "inicio" in item.titulo | lower %}
+                    <i class="fa-solid fa-house"></i>
+
+                {% elif "referencia" in item.titulo | lower %}
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                {% elif "negociacio" in item.titulo | lower %}
+                    <i class="fa-solid fa-handshake"></i>
+
+                {% elif "descarga" in item.titulo | lower %}
+                    <i class="fa-solid fa-download"></i>
+
+                {% else %}
+                    <i class="fa-solid fa-folder"></i>
+                {% endif %}
 
             </span>
 
-            <span>
-
-                {{ item.titulo }}
-
-            </span>
+            <span>{{ item.titulo }}</span>
 
         </a>
 
         {% endfor %}
 
     </nav>
+
+    <div class="sidebar-footer">
+        <img src="{{ url_for('static', filename='img/Objetivos.png') }}"
+            alt="Objetivos SANEM">
+    </div>
 
 </aside>

@@ -1,29 +1,40 @@
-<header class="header-principal">
+<header class="sanem-header">
+    
+    <!-- BLOQUE IZQUIERDO: MENÚ Y MARCA -->
+    <div class="header-left">
 
-    <div class="logo-panel">
-
-        <button id="btnMenu" class="btn-menu">
+        <button type="button" 
+            id="btnMenu" 
+            class="btn-menu-trigger"
+            style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; margin-right: 15px;">
             ☰
         </button>
 
-        <img
-            src="{{ url_for('static', filename='img/logo_sanitas.png') }}"
-            alt="EPS Sanitas">
+        <div class="header-brand">
+            <img 
+                src="{{ url_for('static', filename='img/Logo_SANEM.png') }}" 
+                alt="SANEM Isotipo" 
+                class="brand-iso">
+
+            <span 
+                class="brand-name">
+                SANEM
+            </span>
+
+        </div>
 
     </div>
 
-    <div class="titulo-panel-header">
-
-        <h1>Herramienta Negociación</h1>
-
+    <!-- BLOQUE CENTRAL: TEXTO INSTITUCIONAL -->
+    <div class="header-center">
+        <h1>Sistema de Análisis para Negociación Estratégica de Medicamentos</h1>
     </div>
 
-    <div class="logo-panel">
-
-        <img
-            src="{{ url_for('static', filename='img/logo_gm.png') }}"
-            alt="Gerencia de Medicamentos">
-
+    <!-- BLOQUE DERECHO: USUARIO Y EPS SANITAS -->
+    <div class="header-right">
+        <div class="header-logo-sanitas">
+            <img src="{{ url_for('static', filename='img/logo_sanitas.png') }}" alt="EPS Sanitas" class="logo-sanitas-img">
+        </div>
     </div>
 
 </header>

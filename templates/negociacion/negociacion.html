@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block titulo %}
-Negociación
+Negociacion
 {% endblock %}
 
 {% block estilos %}
@@ -36,5 +36,25 @@ Negociación
     const filtrosKPI = JSON.parse('{{ filtros_kpi | tojson | safe }}');
     const estadoPanel = "{{ estado_panel }}";
 </script>
+
+{% if mensaje %}
+
+<script>
+
+Swal.fire({
+
+    icon: "error",
+
+    title: "Archivo incompatible",
+
+    text: "{{ mensaje }}",
+
+    confirmButtonText: "Aceptar"
+
+});
+
+</script>
+
+{% endif %}
 
 {% endblock %}

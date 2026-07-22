@@ -14,6 +14,7 @@ import unicodedata
 import sqlite3
 from data_manager import obtener_detalle_facturacion
 import urllib.parse
+from flask import send_from_directory
 
 from services.archivo_service import (
     guardar_archivo,
@@ -164,12 +165,9 @@ def referencia():
 
     if codigo_seleccionado:
 
-        print("Código recibido:", codigo_seleccionado)
-
         detalle = data_manager.obtener_resumen(
             codigo_seleccionado
         )
-        print("Detalle:", detalle)
 
         if detalle:
 
@@ -493,7 +491,6 @@ def negociacion():
                 hojas = obtener_hojas_excel(ruta)
                 nombre_archivo = obtener_nombre_archivo(ruta)
 
-
         # ==============================
         # CASO 2:
         # CARGAR HOJA SELECCIONADA
@@ -502,347 +499,395 @@ def negociacion():
         # Procesar hoja
         if "hoja" in request.form:
 
-            inicio = time.perf_counter()
+            try:
 
-            ruta = request.form.get("archivo")
-            hoja = request.form.get("hoja")
+                inicio = time.perf_counter()
 
-            hojas = obtener_hojas_excel(ruta)
-            nombre_archivo = obtener_nombre_archivo(ruta)
+                ruta = request.form.get("archivo")
+                hoja = request.form.get("hoja")
 
-            hoja = request.form.get("hoja")
-            hoja_seleccionada = hoja
+                hojas = obtener_hojas_excel(ruta)
+                nombre_archivo = obtener_nombre_archivo(ruta)
 
-            datos, fila_encabezado = encontrar_encabezado(
-                ruta,
-                hoja
-            )
+                hoja = request.form.get("hoja")
+                hoja_seleccionada = hoja
 
-            if datos is not None:
-                datos.columns = [
-                    str(col).strip().upper()
-                    for col in datos.columns
-                ]
-
-            if datos is not None:
-
-                datos = datos.dropna(
-                    axis=1,
-                    how="all"    
+                datos, fila_encabezado = encontrar_encabezado(
+                    ruta,
+                    hoja
                 )
 
-                datos = datos.loc[
-                    :,
-                    ~datos.columns.astype(str)
-                    .str.contains(
-                        "^Unnamed",
-                        case=False,
-                        na=False
-                    )
-                ]
+                if datos is not None:
+                    datos.columns = [
+                        str(col).strip().upper()
+                        for col in datos.columns
+                    ]
 
-                columnas = list(datos.columns)
+                if datos is not None:
 
-                if len(columnas) >= 3:
-
-                    datos.rename(
-                        columns={
-                            columnas[0]: "CODIGO",
-                            columnas[1]: "DESCRIPCION",
-                            columnas[2]: "VALOR OFERTADO"
-                        },
-                        inplace=True
+                    datos = datos.dropna(
+                        axis=1,
+                        how="all"    
                     )
 
-                    # Eliminar filas completamente vacías
-                    datos = datos.dropna(how="all")
-
-                    # Limpiar columnas principales
-                    for col in ["CODIGO", "DESCRIPCION"]:
-
-                        datos[col] = (
-                            datos[col]
-                            .fillna("")
-                            .astype(str)
-                            .str.strip()
-                        )
-
-                    # Eliminar filas donde no exista código ni descripción
-                    datos = datos[
-                        ~(
-                            (datos["CODIGO"] == "")
-                            &
-                            (datos["DESCRIPCION"] == "")
+                    datos = datos.loc[
+                        :,
+                        ~datos.columns.astype(str)
+                        .str.contains(
+                            "^Unnamed",
+                            case=False,
+                            na=False
                         )
                     ]
 
-                    datos.reset_index(drop=True, inplace=True)
+                    columnas = list(datos.columns)
 
-                tabla = datos.to_dict(orient="records")
+                    if len(columnas) >= 3:
 
-            validaciones = []
+                        datos.rename(
+                            columns={
+                                columnas[0]: "CODIGO",
+                                columnas[1]: "DESCRIPCION",
+                                columnas[2]: "VALOR OFERTADO"
+                            },
+                            inplace=True
+                        )
 
-            if datos is None:
+                        # ===========================================
+                        # VALIDAR QUE "VALOR OFERTADO" SEA NUMÉRICO
+                        # ===========================================
 
-                validaciones.append(
-                    "❌ No se encontraron encabezados válidos."
-                )
+                        valor = pd.to_numeric(
+                            datos["VALOR OFERTADO"],
+                            errors="coerce"
+                        )
 
-                archivo_valido = False
+                        porcentaje_validos = valor.notna().mean()
 
-            elif datos.empty:
+                        if porcentaje_validos < 0.80:
 
-                validaciones.append(
-                    "❌ La hoja no contiene registros."
-                )
+                            validaciones.append(
+                                "❌ La tercera columna no parece contener el Valor Ofertado."
+                            )
 
-                archivo_valido = False
+                            archivo_valido = False
 
-            elif datos.shape[1] < 3:
+                            return render_template(
+                                "negociacion/negociacion.html",
+                                ...
+                            )
 
-                validaciones.append(
-                    "❌ La hoja debe tener mínimo 3 columnas."
-                )
+                        # Eliminar filas completamente vacías
+                        datos = datos.dropna(how="all")
 
-                archivo_valido = False
+                        # Limpiar columnas principales
+                        for col in ["CODIGO", "DESCRIPCION"]:
 
-            else:
+                            datos[col] = (
+                                datos[col]
+                                .fillna("")
+                                .astype(str)
+                                .str.strip()
+                            )
 
-                validaciones.append(
-                    f"✔ Encabezados encontrados en fila: {fila_encabezado}"
-                )
+                        # Eliminar filas donde no exista código ni descripción
+                        datos = datos[
+                            ~(
+                                (datos["CODIGO"] == "")
+                                &
+                                (datos["DESCRIPCION"] == "")
+                            )
+                        ]
 
-                validaciones.append(
-                    f"✔ Registros encontrados: {len(datos):,}"
-                )
+                        datos.reset_index(drop=True, inplace=True)
 
-                validaciones.append(
-                    f"✔ Columnas encontradas: {datos.shape[1]}"
-                )
+                    tabla = datos.to_dict(orient="records")
 
-                archivo_valido = True
+                validaciones = []
 
-                total_registros = len(datos)
+                if datos is None:
 
-                cruces = [
-                    (
-                        "Regulados",
-                        "CUM",
-                        "Valor UMD con Intermediacion sin decimales",
-                        "REGULACION"
-                    ),
-                    (
-                        "NT",
-                        "Codigo",
-                        "Valor Referencia UMD",
-                        "NT"
-                    ),
-                    (
-                        "PM",
-                        "CUM",
-                        "VMR UMD 2026",
-                        "PM"
-                    ),
-                    (
-                        "Tarifario",
-                        "CUM",
-                        "VALOR",
-                        "REFERENCIA"
-                    ),
-                    (
-                        "INVIMA",
-                        "CUM",
-                        "Estado Registro",
-                        "ESTADO REGISTRO"
+                    validaciones.append(
+                        "❌ No se encontraron encabezados válidos."
                     )
-                ]
 
-                duplicados = datos.duplicated(
-                    subset="CODIGO",
-                    keep=False
-                )
+                    archivo_valido = False
 
-                datos["DUPLICADO"] = ""
+                elif datos.empty:
 
-                datos.loc[
-                    duplicados,
-                    "DUPLICADO"
-                ] = "DUPLICADO"
+                    validaciones.append(
+                        "❌ La hoja no contiene registros."
+                    )
 
-                for hoja_ref, campo_cod, campo_valor, nombre in cruces:
+                    archivo_valido = False
 
-                    datos, coincidencias = cruzar_referencia(
-                        datos,
-                        hoja_ref,
-                        campo_cod,
-                        campo_valor,
-                        nombre
+                elif datos.shape[1] < 3:
+
+                    validaciones.append(
+                        "❌ La hoja debe tener mínimo 3 columnas."
+                    )
+
+                    archivo_valido = False
+
+                else:
+
+                    validaciones.append(
+                        f"✔ Encabezados encontrados en fila: {fila_encabezado}"
                     )
 
                     validaciones.append(
-                        f"✔ {nombre}: {coincidencias:,}"
+                        f"✔ Registros encontrados: {len(datos):,}"
                     )
 
-                datos = construir_valor_objetivo(datos)
-                datos = ordenar_columnas(datos)
+                    validaciones.append(
+                        f"✔ Columnas encontradas: {datos.shape[1]}"
+                    )
 
-                # ----------------------------------------
-                # FORMATO PARA VISUALIZACIÓN
-                # ----------------------------------------
+                    archivo_valido = True
 
-                from pandas.api.types import is_numeric_dtype
+                    total_registros = len(datos)
 
-                # Monedas
-                for col in ["VALOR OFERTADO", "VALOR OBJETIVO"]:
+                    cruces = [
+                        (
+                            "Regulados",
+                            "CUM",
+                            "Valor UMD con Intermediacion sin decimales",
+                            "REGULACION"
+                        ),
+                        (
+                            "NT",
+                            "Codigo",
+                            "Valor Referencia UMD",
+                            "NT"
+                        ),
+                        (
+                            "PM",
+                            "CUM",
+                            "VMR UMD 2026",
+                            "PM"
+                        ),
+                        (
+                            "Tarifario",
+                            "CUM",
+                            "VALOR",
+                            "REFERENCIA"
+                        ),
+                        (
+                            "INVIMA",
+                            "CUM",
+                            "Estado Registro",
+                            "ESTADO REGISTRO"
+                        )
+                    ]
 
-                    if col in datos.columns:
+                    duplicados = datos.duplicated(
+                        subset="CODIGO",
+                        keep=False
+                    )
 
-                        datos[col] = (
-                            pd.to_numeric(datos[col], errors="coerce")
+                    datos["DUPLICADO"] = ""
+
+                    datos.loc[
+                        duplicados,
+                        "DUPLICADO"
+                    ] = "DUPLICADO"
+
+                    for hoja_ref, campo_cod, campo_valor, nombre in cruces:
+
+                        datos, coincidencias = cruzar_referencia(
+                            datos,
+                            hoja_ref,
+                            campo_cod,
+                            campo_valor,
+                            nombre
+                        )
+
+                        validaciones.append(
+                            f"✔ {nombre}: {coincidencias:,}"
+                        )
+
+                    datos = construir_valor_objetivo(datos)
+                    datos = ordenar_columnas(datos)
+
+                    # ----------------------------------------
+                    # FORMATO PARA VISUALIZACIÓN
+                    # ----------------------------------------
+
+                    from pandas.api.types import is_numeric_dtype
+
+                    # Monedas
+                    for col in ["VALOR OFERTADO", "VALOR OBJETIVO"]:
+
+                        if col in datos.columns:
+
+                            datos[col] = (
+                                pd.to_numeric(datos[col], errors="coerce")
+                                .map(
+                                    lambda x:
+                                    ""
+                                    if pd.isna(x)
+                                    else f"{x:,.0f}".replace(",", ".")
+                                )
+                            )
+
+                    # Enteros
+                    for col in ["REGULACION", "NT", "REFERENCIA", "PM"]:
+
+                        if col in datos.columns:
+
+                            datos[col] = (
+                                pd.to_numeric(datos[col], errors="coerce")
+                                .map(
+                                    lambda x:
+                                    ""
+                                    if pd.isna(x)
+                                    else str(int(x))
+                                )
+                            )
+
+                    # Desviación
+                    if "DESVIACION" in datos.columns:
+
+                        datos["DESVIACION"] = (
+                            pd.to_numeric(datos["DESVIACION"], errors="coerce")
                             .map(
                                 lambda x:
                                 ""
                                 if pd.isna(x)
-                                else f"{x:,.0f}".replace(",", ".")
+                                else (
+                                    f"{x:,.2f}"
+                                    .replace(",", "X")
+                                    .replace(".", ",")
+                                    .replace("X", ".")
+                                )
                             )
                         )
 
-                # Enteros
-                for col in ["REGULACION", "NT", "REFERENCIA", "PM"]:
+                    kpis = {
+                        "registros": "--",
+                        "duplicados": "--",
+                        "aceptables": "--",
+                        "renegociar": "--",
+                        "activos": "--",
+                        "no_activos": "--",
+                        "fecha": "--",
+                        "cobertura": "--"
+                    }
 
-                    if col in datos.columns:
+                    def construir_kpis(df):
 
-                        datos[col] = (
-                            pd.to_numeric(datos[col], errors="coerce")
-                            .map(
-                                lambda x:
-                                ""
-                                if pd.isna(x)
-                                else str(int(x))
+                        kpis = {}
+
+                        for nombre, config in FILTROS_KPI.items():
+
+                            columna = config["columna"]
+
+                            serie = (
+                                df[columna]
+                                .fillna("")
+                                .astype(str)
+                                .str.upper()
+                                .str.strip()
                             )
-                        )
 
-                # Desviación
-                if "DESVIACION" in datos.columns:
+                            kpis[nombre] = int(serie.isin(config["valores"]).sum())
 
-                    datos["DESVIACION"] = (
-                        pd.to_numeric(datos["DESVIACION"], errors="coerce")
-                        .map(
-                            lambda x:
-                            ""
-                            if pd.isna(x)
-                            else (
-                                f"{x:,.2f}"
-                                .replace(",", "X")
-                                .replace(".", ",")
-                                .replace("X", ".")
-                            )
-                        )
-                    )
+                        # Registros
+                        kpis["registros"] = len(df)
 
-                kpis = {
-                    "registros": "--",
-                    "duplicados": "--",
-                    "aceptables": "--",
-                    "renegociar": "--",
-                    "activos": "--",
-                    "no_activos": "--",
-                    "fecha": "--",
-                    "cobertura": "--"
-                }
-
-                def construir_kpis(df):
-
-                    kpis = {}
-
-                    for nombre, config in FILTROS_KPI.items():
-
-                        columna = config["columna"]
-
-                        serie = (
-                            df[columna]
-                            .fillna("")
-                            .astype(str)
-                            .str.upper()
-                            .str.strip()
-                        )
-
-                        kpis[nombre] = int(serie.isin(config["valores"]).sum())
-
-                    # Registros
-                    kpis["registros"] = len(df)
-
-                    # Cobertura
-                    cubiertos = (
-                        df[
-                            [
-                                "REGULACION",
-                                "NT",
-                                "PM",
-                                "REFERENCIA"
+                        # Cobertura
+                        cubiertos = (
+                            df[
+                                [
+                                    "REGULACION",
+                                    "NT",
+                                    "PM",
+                                    "REFERENCIA"
+                                ]
                             ]
-                        ]
-                        .notna()
-                        .any(axis=1)
+                            .notna()
+                            .any(axis=1)
+                        )
+
+                        kpis["cobertura"] = float(
+                            round(cubiertos.mean() * 100, 1)
+                        )
+
+                        kpis["fecha"] = datetime.now().strftime("%d/%m/%Y")
+
+                        return kpis
+                    
+                    kpis = construir_kpis(datos)
+
+                    # -----------------------------------------
+                    # Formatear KPIs numéricos
+                    # -----------------------------------------
+
+                    for campo in list(kpis.keys()):
+
+                        valor = kpis[campo]
+
+                        if isinstance(valor, (int, float)):
+
+                            if campo == "cobertura":
+
+                                kpis[campo] = (
+                                    f"{valor:,.1f}"
+                                    .replace(",", "X")
+                                    .replace(".", ",")
+                                    .replace("X", ".")
+                                    + "%"
+                                )
+
+                            else:
+
+                                kpis[campo] = (
+                                    f"{valor:,.0f}"
+                                    .replace(",", ".")
+                                )
+
+                    fin = time.perf_counter()
+
+                    tiempo_proceso = round(fin - inicio, 2)
+
+                    id_proceso = str(uuid.uuid4())
+
+                    cache_negociaciones[id_proceso] = {
+                        "datos": datos.copy(),
+                        "archivo": os.path.basename(ruta),
+                        "ruta": ruta,
+                        "hoja": hoja
+                    }
+
+                    session["id_proceso"] = id_proceso
+
+                    tabla = (
+                        datos.to_dict(orient="records")
+                        if datos is not None
+                        else None
                     )
 
-                    kpis["cobertura"] = float(
-                        round(cubiertos.mean() * 100, 1)
-                    )
+            except Exception as e:
 
-                    kpis["fecha"] = datetime.now().strftime("%d/%m/%Y")
+                import traceback
 
-                    return kpis
-                
-                kpis = construir_kpis(datos)
+                traceback.print_exc()
 
-                # -----------------------------------------
-                # Formatear KPIs numéricos
-                # -----------------------------------------
-
-                for campo in list(kpis.keys()):
-
-                    valor = kpis[campo]
-
-                    if isinstance(valor, (int, float)):
-
-                        if campo == "cobertura":
-
-                            kpis[campo] = (
-                                f"{valor:,.1f}"
-                                .replace(",", "X")
-                                .replace(".", ",")
-                                .replace("X", ".")
-                                + "%"
-                            )
-
-                        else:
-
-                            kpis[campo] = (
-                                f"{valor:,.0f}"
-                                .replace(",", ".")
-                            )
-
-                fin = time.perf_counter()
-
-                tiempo_proceso = round(fin - inicio, 2)
-
-                id_proceso = str(uuid.uuid4())
-
-                cache_negociaciones[id_proceso] = {
-                    "datos": datos.copy(),
-                    "archivo": os.path.basename(ruta),
-                    "ruta": ruta,
-                    "hoja": hoja
-                }
-
-                session["id_proceso"] = id_proceso
-
-                tabla = (
-                    datos.to_dict(orient="records")
-                    if datos is not None
-                    else None
+                mensaje = (
+                    "El archivo no pudo procesarse porque no cumple con la estructura "
+                    "esperada por SANEM."
                 )
+
+                archivo_valido = False
+
+                validaciones = [
+                    "❌ El archivo es incompatible con SANEM.",
+                    "Revise que contenga un Código CUM y un Valor Ofertado válidos."
+                ]
+
+                tabla = None
+                kpis = None
+                total_registros = 0
 
     estado_panel = "inicio"
 
@@ -1189,6 +1234,21 @@ def descargas():
         archivos=archivos_sistema
     )
 
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, "static", "img"),
+        "favicon.ico",
+        mimetype="image/vnd.microsoft.icon"
+    )
+
+@app.route("/test_favicon")
+def test_favicon():
+    ruta = os.path.join(app.root_path, "static", "img", "favicon.ico")
+    return {
+        "existe": os.path.exists(ruta),
+        "ruta": ruta
+    }
 
 @app.context_processor
 def inject_menu():
