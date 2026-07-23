@@ -58,7 +58,6 @@
                 class="btn-secundario"
                 data-cum="{% if request.args.get('codigo') %}{{ request.args.get('codigo') }}{% elif filtro %}{{ filtro }}{% endif %}"
                 onclick="abrirDetalleFacturacionModal(this, event)">
-                <i class="fa-solid fa-circle-info"></i>
                 <img src="{{ url_for('static', filename='img/detalle.png') }}" style="margin-right: 8px; height: 40px">
                 Detalle    
             </button>

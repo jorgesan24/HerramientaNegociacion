@@ -1,15 +1,15 @@
-<section class="contenido-principal">
+<section class="panel-principal">
 
-    <aside class="panel-izquierdo">
-
+    <div class="panel-hojas">
         {% include "negociacion/_panel_hojas.html" %}
+    </div>
 
-    </aside>
+    <div class="panel-indicadores">
+        {% include "negociacion/_panel_indicadores.html" %}
+    </div>
 
-    <section class="panel-derecho">
-
-        {% include "negociacion/_panel_derecho.html" %}
-
-    </section>
+    <div class="panel-validaciones">
+        {% include "negociacion/_panel_validacion.html" %}
+    </div>
 
 </section>

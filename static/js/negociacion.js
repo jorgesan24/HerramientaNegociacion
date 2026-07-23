@@ -1,56 +1,29 @@
+//====================================================
+// VARIABLES GLOBALES TABLA
+//====================================================
+
+let filas = [];
+let filasFiltradas = [];
+let paginaActual = 1;
+
+const filasPorPagina = 15;
+
 document.addEventListener("DOMContentLoaded", () => {
 
     console.log("negociacion.js cargado");    
     console.log("Filtros KPI:", filtrosKPI);
 
-    // ==============================================================
-    // VALIDACIÓN DE ARCHIVOS DESDE DRIVE EN MÓVILES (CORREGIDO)
-    // ==============================================================
-    const inputArchivoNegociacion = document.getElementById("archivoExcelNegociacion") || document.querySelector('input[type="file"]');
+    const esMovil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    if (inputArchivoNegociacion) {
-        inputArchivoNegociacion.addEventListener("change", function (evento) {
-            const archivo = evento.target.files[0];
-            
-            if (!archivo) return;
+    if (esMovil) {
 
-            console.log("-> Archivo cargado. Nombre:", archivo.name, "| Tamaño:", archivo.size);
+        Mensajes.movil(
+            "Este tipo de archivo solo puede cargarse desde un computador."
+        );
 
-            // Validamos si el archivo proviene de un URI virtual de Drive (típico en Android/iOS)
-            // O si el tamaño reportado es 0 bytes o el nombre tiene extensiones temporales de la nube
-            const esDesdeDrive = archivo.name.includes(".driveextension") || 
-                                archivo.name.startsWith("content://") || 
-                                archivo.size === 0;
+        return;
 
-            if (esDesdeDrive) {
-                // Detenemos cualquier procesamiento del navegador para evitar que cierre la página
-                evento.preventDefault();
-                evento.stopPropagation();
-                this.value = ""; // Limpiamos el input para proteger el sistema
-
-                console.log("-> Intento de carga detectado desde Drive en dispositivo móvil. Bloqueando...");
-
-                // Invocamos tu mensaje modular nativo de SweetAlert2 de forma controlada
-                if (typeof Mensajes !== "undefined" && typeof Mensajes.movil === "function") {
-                    Mensajes.movil(
-                        "No es posible cargar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el archivo Excel a la memoria interna de su dispositivo e inténtelo nuevamente.",
-                        "Archivo no válido"
-                    );
-                } else if (typeof Swal !== "undefined") {
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Archivo no válido",
-                        text: "No es posible cargar archivos directamente desde Google Drive en dispositivos móviles. Descárguelo a la memoria local.",
-                        confirmButtonText: "Aceptar",
-                        confirmButtonColor: "#1565C0",
-                        allowOutsideClick: false,
-                        heightAuto: false
-                    });
-                }
-            }
-        });
     }
-
 
     const hojas = document.querySelectorAll(".item-hoja");
 
@@ -73,233 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
         });
-
-    });
-
-});
-
-$(document).ready(function () {
-
-    if (!$("#tablaNegociacion").length) return;
-
-    console.log("jQuery:", typeof $);
-    console.log("DataTable:", typeof DataTable);
-
-    const tabla = $("#tablaNegociacion").DataTable({
-
-        pageLength:15,
-        ordering:true,
-        searching:true,
-        paging:true,
-        info:false,
-        lengthChange:false,
-        autoWidth:false,
-        responsive:false,
-
-        columnDefs: [
-
-            {
-                targets: [
-                    columnasMoneda = 2, // VALOR OFERTADO
-                    3,                  // REGULACION
-                    4,                  // NT
-                    5,                  // REFERENCIA
-                    6,                  // PM
-                    7,                  // VALOR OBJETIVO
-                ],
-
-                className: "text-end",
-
-                render: function (data, type) {
-
-                    if (type !== "display")
-                        return data;
-
-                    if (data === null || data === "" || data === undefined)
-                        return "";
-
-                    let valor = parseFloat(
-                        String(data)
-                            .replace(/\./g, "")
-                            .replace(",", ".")
-                    );
-
-                    if (isNaN(valor))
-                        return data;
-
-                    return valor.toLocaleString("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 2
-                    });
-
-                }
-
-            }
-
-        ],
-
-        dom:"rtp",
-
-        language:{
-            zeroRecords:"No se encontraron resultados",
-
-            paginate:{
-                previous:"◀",
-                next:"▶"
-            }
-        }
-
-    });
-
-    console.log("DataTable inicializada");
-
-    const columnas = {};
-
-    tabla.columns().every(function(i){
-
-        columnas[
-            $(tabla.column(i).header()).text().trim().toUpperCase()
-        ] = i;
-
-    });
-
-    function limpiarFiltros() {
-
-        tabla.search("");
-        tabla.columns().search("").draw();
-
-    }
-
-    function aplicarFiltro(columna, valores) {
-
-        const indice = columnas[columna.toUpperCase()];
-
-        if (indice === undefined) return;
-
-        const regex = valores
-
-            .map(v => "^" + v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$")
-
-            .join("|");
-
-        tabla
-
-            .column(indice)
-
-            .search(regex, true, false)
-
-            .draw();
-    }
-
-    function activarFiltro(nombreFiltro){
-
-        limpiarFiltros();
-
-        if(nombreFiltro==="todos"){
-
-            $(".indicador-card").removeClass("activo");
-
-            $("#filtroTabla").val("todos");
-
-            return;
-
-        }
-
-        const filtro=filtrosKPI[nombreFiltro];
-
-        if(!filtro){
-            console.warn("Filtro inexistente:",nombreFiltro);
-            return;
-        }
-
-        aplicarFiltro(
-            filtro.columna,
-            filtro.valores
-        );
-
-        $(".indicador-card").removeClass("activo");
-
-        $('.indicador-card[data-filtro="'+nombreFiltro+'"]')
-            .addClass("activo");
-
-        const mapaCombo = {
-            aceptables: "ACEPTAR",
-            renegociar: "RENEGOCIAR",
-            duplicados: "DUPLICADO",
-            activos: "ACTIVO",
-            no_activos: "NO ACTIVO",
-            registros: "todos"
-        };
-
-        $("#filtroTabla").val(mapaCombo[nombreFiltro] || "todos");
-    }
-
-    $("#buscarTabla").on("keyup", function () {
-
-        tabla.search(this.value).draw();
-    });
-
-    tabla.on("draw", function(){
-        $("#contadorRegistros").text(
-            tabla.rows({search:"applied"}).count()+" registros"
-        );
-    });
-
-    const mapaFiltros={
-        "ACEPTAR":"aceptables",
-        "RENEGOCIAR":"renegociar",
-        "DUPLICADO":"duplicados",
-        "ACTIVO":"activos",
-        "NO ACTIVO":"no_activos"
-    };    
-
-    $("#filtroTabla").on("change",function(){
-
-        const valor=this.value;
-
-        if(valor==="todos"){
-
-            activarFiltro("todos");
-            return;
-        }
-        activarFiltro(mapaFiltros[valor]);
-    });
-
-    $(".indicador-card[data-filtro]").on("click",function(){
-
-        activarFiltro(
-            $(this).data("filtro")
-        );
-    });
-
-    $(function () {
-
-        $("#toggleValidacion").on("click", function () {
-
-            $("#contenidoValidacion").stop(true, true).slideToggle(250);
-
-            $("#iconoToggleValidacion").text(function (_, t) {
-                return t === "▲" ? "▼" : "▲";
-            });
-
-        });
-
-    });
-
-    $("#toggleHojas").on("click", function () {
-
-        // Oculta / muestra el contenido del panel
-        $("#contenidoHojas").stop(true, true).slideToggle(250);
-
-        // Cambia la flecha
-        $("#iconoToggleHojas").text(function (_, t) {
-            return t === "▲" ? "▼" : "▲";
-        });
-
-        // Expande o contrae la tabla
-        $("#panelTabla").toggleClass("expandida");
 
     });
 
@@ -416,68 +162,287 @@ chkOtro.addEventListener("change", function(){
 
 });
 
-// ==============================================================
-// BLINDAJE DE SEGURIDAD PARA ENVÍO DE ARCHIVOS (FORM SUBMIT)
-// ==============================================================
-document.addEventListener("DOMContentLoaded", function() {
-    // Buscamos el formulario de cambio de archivo usando su clase nativa
-    const formCambiar = document.querySelector(".form-cambiar");
+$(document).ready(function () {
 
-    if (formCambiar) {
-        formCambiar.addEventListener("submit", function (evento) {
-            // Buscamos el input file dentro de este formulario
-            const inputFile = this.querySelector('input[type="file"]');
-            
-            if (inputFile && inputFile.files && inputFile.files.length > 0) {
-                const archivo = inputFile.files[0];
-                console.log("-> Git interceptando Submit. Archivo a enviar:", archivo.name, "| Tamaño:", archivo.size);
+    $("#toggleValidacion").off("click").on("click", function () {
 
-                // Criterios estrictos para identificar un archivo virtual de Google Drive en celulares
-                const esDesdeDrive = archivo.name.includes(".driveextension") || 
-                                     archivo.name.startsWith("content://") || 
-                                     archivo.size === 0;
+        $("#contenidoValidacion").slideToggle(250);
 
-                if (esDesdeDrive) {
-                    // FRENAMOS EN SECO EL SUBMIT ANTES DE QUE VIAJE A FLASK
-                    evento.preventDefault();
-                    evento.stopPropagation();
-                    
-                    inputFile.value = ""; // Vaciamos el campo por seguridad
-                    console.warn("-> Envío cancelado: El archivo proviene de Google Drive Móvil.");
+        const icono = $("#iconoToggleValidacion");
 
-                    // Disparamos tu alerta corporativa de SweetAlert2
-                    if (typeof Mensajes !== "undefined" && typeof Mensajes.movil === "function") {
-                        Mensajes.movil(
-                            "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
-                            "Archivo no válido"
-                        );
-                    } else if (typeof Swal !== "undefined") {
-                        Swal.fire({
-                            icon: "warning",
-                            title: "Archivo no válido",
-                            text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Descárguelo a la memoria local.",
-                            confirmButtonText: "Aceptar",
-                            confirmButtonColor: "#1565C0",
-                            allowOutsideClick: false,
-                            heightAuto: false
-                        });
-                    }
-                } else {
-                    // SI EL ARCHIVO ES VÁLIDO (PC o Memoria Local Móvil):
-                    // Lanzamos el spinner para dar excelente feedback visual mientras Flask procesa
-                    if (typeof Swal !== "undefined") {
-                        Swal.fire({
-                            title: "Procesando Archivo",
-                            text: "Analizando la estructura de la negociación, por favor espere...",
-                            allowOutsideClick: false,
-                            showConfirmButton: false,
-                            heightAuto: false,
-                            didOpen: () => { Swal.showLoading(); }
-                        });
-                    }
-                    console.log("-> Archivo verificado. Permitiendo viaje síncrono a Flask con éxito.");
-                }
-            }
-        });
-    }
+        icono.text(
+            icono.text() === "▲"
+                ? "▼"
+                : "▲"
+        );
+
+    });
+
+    $("#toggleHojas").off("click").on("click", function () {
+
+        $("#contenidoHojas").slideToggle(250);
+
+        const icono = $("#iconoToggleHojas");
+
+        icono.text(
+            icono.text() === "▲"
+                ? "▼"
+                : "▲"
+        );
+
+        $("#panelTabla").toggleClass("expandida");
+
+    });
+
 });
+
+//====================================================
+// FILTROS DE LA TABLA
+//====================================================
+const mapaTarjetas = {
+    registros: "todos",
+    aceptables: "ACEPTAR",
+    renegociar: "RENEGOCIAR",
+    duplicados: "DUPLICADO",
+    activos: "ACTIVO",
+    no_activos: "NO ACTIVO"
+};
+
+function renderizarPagina() {
+
+    const totalPaginas = Math.max(
+        1,
+        Math.ceil(filasFiltradas.length / filasPorPagina)
+    );
+
+    if (paginaActual > totalPaginas)
+        paginaActual = totalPaginas;
+
+    const inicio = (paginaActual - 1) * filasPorPagina;
+
+    const fin = inicio + filasPorPagina;
+
+    filas.forEach(f => f.style.display = "none");
+
+    filasFiltradas
+        .slice(inicio, fin)
+        .forEach(f => f.style.display = "");
+
+    const contador = document.getElementById("contadorResultadosBuscador");
+
+    if (contador) {
+
+        contador.innerHTML = `
+            Resultados encontrados:
+            <strong>${filasFiltradas.length}</strong>
+            |
+            Página
+            <strong>${paginaActual}</strong>
+            de
+            <strong>${totalPaginas}</strong>
+        `;
+    }
+    construirPaginador(totalPaginas);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const tabla = document.getElementById("tablaNegociacion");
+
+    if (!tabla) return;
+
+    filas = [...tabla.querySelectorAll("tbody tr")];
+
+    const buscador = document.getElementById("buscarTabla");
+
+    const combo = document.getElementById("filtroTabla");
+
+    const contador = document.getElementById("contadorResultadosBuscador");
+
+    function filtrarTabla() {
+
+        filasFiltradas = [];
+
+        const texto = buscador.value.toLowerCase().trim();
+
+        const filtro = combo.value;
+
+        filas.forEach(fila => {
+
+            const celdas = fila.querySelectorAll("td");
+
+            const contenido = fila.innerText.toLowerCase();
+
+            const validacion = celdas[8]?.innerText.trim().toUpperCase() || "";
+
+            const estado = celdas[9]?.innerText.trim().toUpperCase() || "";
+
+            const duplicado = celdas[10]?.innerText.trim().toUpperCase() || "";
+
+            let mostrar = contenido.includes(texto);
+
+            if (mostrar) {
+
+                switch (filtro) {
+
+                    case "ACEPTAR":
+                        mostrar = validacion === "ACEPTAR";
+                        break;
+
+                    case "RENEGOCIAR":
+                        mostrar = validacion === "RENEGOCIAR";
+                        break;
+
+                    case "DUPLICADO":
+                        mostrar = duplicado === "DUPLICADO";
+                        break;
+
+                    case "ACTIVO":
+
+                        mostrar = [
+                            "VIGENTE",
+                            "EN TRAMITE RENOV",
+                            "DROGA BLANCA",
+                            "PAÑALES",
+                            "APME",
+                            "MVND"
+                        ].includes(estado);
+
+                        break;
+
+                    case "NO ACTIVO":
+
+                        mostrar = [
+                            "VENCIDO",
+                            "NEGADO",
+                            "TEMP. NO COMERC - VIGENTE",
+                            "ABANDONO",
+                            "TEMP. NO COMERCIALIZADO - EN TRÁMITE RENOV",
+                            "NO EXISTE",
+                            "REVOCADO",
+                            "COMERCIALIZADO SOLO POR EXPORTACION",
+                            "SUSPENDIDO",
+                            "NO APLICA REGISTRO",
+                            "INACTIVO",
+                            "MUESTRA MEDICA",
+                            "DESISTIDO",
+                            "CANCELADO",
+                            "PERDIDA FUERZA EJEC"
+                        ].includes(estado);
+
+                        break;
+                }
+
+            }
+
+            if (mostrar) {
+
+                filasFiltradas.push(fila);
+
+            }
+
+        });
+
+        if (contador) {
+
+            paginaActual = 1;
+
+            renderizarPagina();
+
+        }
+
+    }
+
+    buscador.addEventListener("keyup", filtrarTabla);
+
+    combo.addEventListener("change", () => {
+
+    document
+            .querySelectorAll(".indicador-card")
+            .forEach(c => c.classList.remove("activo"));
+
+        const tarjeta = Object.keys(mapaTarjetas)
+            .find(k => mapaTarjetas[k] === combo.value);
+
+        if (tarjeta) {
+
+            document
+                .querySelector(`.indicador-card[data-filtro="${tarjeta}"]`)
+                ?.classList.add("activo");
+
+        }
+
+        filtrarTabla();
+
+    });
+
+    document
+    .querySelectorAll(".indicador-card[data-filtro]")
+    .forEach(card => {
+
+        card.addEventListener("click", function () {
+
+            // Quitar selección anterior
+            document
+                .querySelectorAll(".indicador-card")
+                .forEach(c => c.classList.remove("activo"));
+
+            // Activar tarjeta
+            this.classList.add("activo");
+
+            // Cambiar el combo
+            const filtro = this.dataset.filtro;
+
+            combo.value = mapaTarjetas[filtro] || "todos";
+
+            // Aplicar filtro
+            filtrarTabla();
+
+        });
+
+    });
+
+    filtrarTabla();
+
+});
+
+function construirPaginador(totalPaginas) {
+
+    const paginador = document.getElementById("paginadorTabla");
+
+    if (!paginador) return;
+
+    paginador.innerHTML = "";
+
+    // Botón anterior
+    const anterior = document.createElement("button");
+    anterior.className = "btn-pagina";
+    anterior.textContent = "◀ Anterior";
+    anterior.disabled = paginaActual === 1;
+
+    anterior.onclick = () => {
+        paginaActual--;
+        renderizarPagina();
+    };
+
+    // Texto central
+    const info = document.createElement("span");
+    info.className = "texto-pagina";
+    info.textContent = `Página ${paginaActual} de ${totalPaginas}`;
+
+    // Botón siguiente
+    const siguiente = document.createElement("button");
+    siguiente.className = "btn-pagina";
+    siguiente.textContent = "Siguiente ▶";
+    siguiente.disabled = paginaActual === totalPaginas;
+
+    siguiente.onclick = () => {
+        paginaActual++;
+        renderizarPagina();
+    };
+
+    paginador.appendChild(anterior);
+    paginador.appendChild(info);
+    paginador.appendChild(siguiente);
+
+}

@@ -2,6 +2,15 @@
 
     <div class="toolbar-tabla">
 
+        <div
+            class="ref-registros-contador"
+            id="contadorResultadosBuscador">
+
+            Resultados encontrados:
+            <strong>{{ total_registros }}</strong>
+
+        </div>
+
         <div class="toolbar-izquierda">
 
             <input
@@ -14,22 +23,18 @@
 
         <div class="toolbar-derecha">
 
-            <label>
+            <label> Mostrar </label>
 
-                Mostrar
+            <select id="filtroTabla">
 
-                <select id="filtroTabla">
+                <option value="todos">Todos</option>
+                <option value="ACEPTAR">Aceptar</option>
+                <option value="RENEGOCIAR">Renegociar</option>
+                <option value="DUPLICADO">Duplicados</option>
+                <option value="ACTIVO">Activos</option>
+                <option value="NO ACTIVO">No activos</option>
 
-                    <option value="todos">Todos</option>
-                    <option value="ACEPTAR">Aceptar</option>
-                    <option value="RENEGOCIAR">Renegociar</option>
-                    <option value="DUPLICADO">Duplicados</option>
-                    <option value="ACTIVO">Activos</option>
-                    <option value="NO ACTIVO">No activos</option>
-
-                </select>
-
-            </label>
+            </select>            
 
             <button
                 id="btnExportar"
@@ -45,71 +50,78 @@
 
     </div>
 
-    <div class="contenedor-tabla">
+    <div class="tabla-scroll">
 
-        {% if tabla %}
+        <table
+            class="tabla-negociacion"
+            id="tablaNegociacion">
 
-            <div class="tabla-scroll">
+            <thead>
 
-            <table id="tablaNegociacion" class="display">
+                <tr>
 
-                <thead>
+                    {% for columna in columnas %}
+                        <th>{{ columna }}</th>
+                    {% endfor %}
 
-                    <tr>
+                </tr>
 
-                        {% for columna in tabla[0].keys() %}
-                            <th>{{ columna }}</th>
-                        {% endfor %}
+            </thead>
 
-                    </tr>
+            <tbody id="tbodyTablaNegociacion">
 
-                </thead>
-
-                <tbody>
+                {% if tabla %}
 
                     {% for fila in tabla %}
 
-                    <tr>
+                        <tr>
 
-                        {% for valor in fila.values() %}
-                            <td>{{ valor }}</td>
-                        {% endfor %}
+                            {% for valor in fila.values() %}
+                                <td>{{ valor }}</td>
+                            {% endfor %}
 
-                    </tr>
+                        </tr>
 
                     {% endfor %}
 
-                </tbody>
+                {% else %}
 
-            </table>
+                    <tr>
 
-            </div>
+                        <td
+                            colspan="{{ columnas|length }}"
+                            class="tabla-vacia-celda">
 
-        {% else %}
+                            <div class="icono-tabla">
+                                📄
+                            </div>
 
-            <div class="tabla-vacia">
+                            <h3>
+                                No hay información para mostrar
+                            </h3>
 
-                <div class="icono-tabla">
+                            <p>
+                                Seleccione una hoja para iniciar el proceso.
+                            </p>
 
-                    📄
+                        </td>
 
-                </div>
+                    </tr>
 
-                <h3>
+                {% endif %}
 
-                    No hay información para mostrar
+            </tbody>
 
-                </h3>
+        </table>
 
-                <p>
+    </div>
 
-                    Seleccione una hoja para iniciar el proceso.
+    <div class="tabla-footer">
 
-                </p>
-
-            </div>
-
-        {% endif %}
+        <div
+            id="paginadorTabla"
+            class="paginador-tabla">
+        </div>
 
     </div>
 

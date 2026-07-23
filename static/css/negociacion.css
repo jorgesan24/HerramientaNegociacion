@@ -17,14 +17,14 @@ PANEL ARCHIVO
     justify-content:space-between;
     background:white;
     border-radius:16px;
-    padding:10px 14px;
+    padding:10px;
     box-shadow:0 8px 18px rgba(0,0,0,.08);
 }
 
 .archivo-label{
     font-weight: bold;
     color:#5a5a5a;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .archivo-info{
@@ -77,7 +77,7 @@ PANEL ARCHIVO
 .texto-archivo{
     flex:1;
     color:#2f3d4f;
-    font-size:16px;
+    font-size:14px;
     font-weight:500;
 }
 
@@ -250,35 +250,6 @@ h3{
 #contenidoHojas{
     overflow:hidden;
     align-items: stretch;
-}
-
-/*=============================
-FNEGOCIACION
-=============================*/
-
-.workspace{
-    display:grid;
-    grid-template-columns:260px 1fr 300px;
-    gap:16px;
-    align-items:start;
-}
-
-.workspace-left{
-    display:flex;
-    flex-direction:column;
-    gap:20px;
-}
-
-.workspace-center{
-    display:flex;
-    flex-direction:column;
-    gap:24px;
-}
-
-.workspace-right{
-    display:flex;
-    flex-direction:column;
-    gap:20px;
 }
 
 /*==================================================
@@ -575,19 +546,17 @@ CABECERA DE LAS TARJETAS KPI
 CONTENIDO PRINCIPAL
 ====================================================*/
 
-.contenido-principal{
+.panel-principal{
     display:grid;
-    grid-template-columns:20% 80%;
-    align-items:start;
-    width: 100%;
-    margin-top: 8px;
-    height: 100%;
+    grid-template-columns:20% 45% 35%;
+    gap:0px;
+    margin-bottom:0px;
 }
 
 .btn-exportar-excel {
     height: 40px; 
     width: 100%; 
-    padding: 0 16px;
+    padding: 20px;
     border-radius: 10px;
     font-size: 13px;
     font-weight: 600;
@@ -615,60 +584,19 @@ CONTENIDO PRINCIPAL
     margin-right:12px;
 }
 
-.panel-izquierdo{
-    display:flex;
-    flex-direction:column;
-    align-items: stretch;
-    margin-left: 6px;
-}
-
-.panel-derecho{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-}
-
-.panel-superior{
-    display:grid;
-    grid-template-columns:70% 30%;
-}
-
 /*====================================================
 TOOLBAR TABLA
 ====================================================*/
 
 .panel-tabla{
-    width: 99%;
-    margin: 6px;
-    background: #FFFFFF;
-    border-radius: 14px;
-    box-shadow: 0 4px 16px rgba(13, 71, 161, 0.03);
-    overflow: hidden;
-    border: 1px solid #D6E2F1;
-    padding: 6px 12px; 
-    box-sizing: border-box;
-    max-height: 60%;
-    height: fit-content; 
-}
-
-.toolbar-tabla{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:8px 16px 6px 16px;
-    border-bottom:1px solid #0464eb;
-}
-
-.toolbar-izquierda{
-    flex:1;
-}
-
-.buscar-tabla{
-    width:260px;
-    padding:8px 12px;
+    width:99%;
+    max-height: 500px;
+    margin: 5px;
+    padding:12px;
+    background:#FFF;
     border-radius:10px;
-    border:1px solid #D6E2F3;
-    font-size:14px;
+    border:1px solid #D6E2F1;
+    box-shadow:0 4px 16px rgba(13,71,161,.05);    
 }
 
 .buscar-tabla:focus{
@@ -677,11 +605,31 @@ TOOLBAR TABLA
     box-shadow:0 0 0 3px rgba(13,110,253,.15);
 }
 
-.toolbar-derecha{
+.toolbar-tabla{
     display:flex;
+    justify-content:space-between;
     align-items:center;
-    gap:18px;
+    border-bottom:1px solid #0464eb;
+    padding: 5px;
+}
+
+.toolbar-izquierda {
+    flex-grow: 1; /* Permite que tome el espacio disponible de forma fluida */
+    max-width: 400px; /* Limita el ancho máximo para dejarle aire al bloque derecho */
+}
+
+.toolbar-derecha{    
+    display: flex;
+    align-items:center;
+    justify-content: flex-end;
+    gap:10px;
     font-size:14px;
+    flex-shrink: 0; /* Evita que este bloque se encoja y amontone los componentes */
+    width: 25%;
+}
+
+.toolbar-derecha label{
+    text-align: center;
 }
 
 .toolbar-derecha select{
@@ -691,9 +639,34 @@ TOOLBAR TABLA
     border:1px solid #D6E2F3;
 }
 
+.buscar-tabla{
+    width:100%;
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid #D6E2F3;
+    font-size:14px;
+}
+
 .contador-registros{
     font-weight:600;
     color:#355D8D;
+}
+
+.ref-registros-contador {
+    font-weight: 600;
+    background: #EAF3FF;
+    color: #0D47A1;
+    border-radius: 6px;
+    display: inline-block;
+    padding: 0px 10;
+    font-size: 12px;
+}
+
+.tabla-footer {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /*====================================================
@@ -719,13 +692,19 @@ TABLA
 ====================================================*/
 
 .tabla-scroll{
-    max-height:620px;
+    max-height:550px;
     overflow:auto;
+    border-radius: 16px;
+    border: 1px solid #DCE7F5;
 }
 
 .tabla-negociacion{
     width:100%;
     border-collapse:collapse;
+    margin-top: 5px;
+    border-radius: 16px;
+    border: 1px solid #DCE7F5;
+    background: #FFFFFF;
 }
 
 .tabla-negociacion thead th{
@@ -733,9 +712,10 @@ TABLA
     top:0;
     background:#0D47A1;
     color:white;
-    padding:12px;
-    z-index:10;
-    font-size: 12px;
+    font-weight: 700;
+    padding:8px;
+    font-size: 11px;
+    text-align: center;
 }
 
 .tabla-negociacion td{
@@ -744,118 +724,71 @@ TABLA
     font-size:12px;
 }
 
+.tabla-negociacion tbody td {
+    border-bottom: 1px solid #EEF2F7;
+    font-size: 11px;
+    color: #333333;
+    white-space: nowrap; /* Evita saltos de línea */
+    padding: 4px 8px;          /* REDUCCIÓN: Bajamos de 7px a 4px arriba/abajo y dejamos 8px a los lados */
+    line-height: 0,9;          /* Fuerza a que el texto ocupe un espacio vertical muy ajustado */
+    vertical-align: middle;    /* Centra el texto verticalmente dentro de la fila reducida */
+}
+
 .tabla-negociacion tbody tr:nth-child(even){
-    background:#f8fafc;
+    background-color: #FAFCFF;
 }
 
 .tabla-negociacion tbody tr:hover{
-    background:#e9f3ff;
-    transition:.15s;}
-
-.dataTables_wrapper{
-    font-family:inherit;
+    background-color: #EDF5FF;
+    cursor: pointer;
 }
 
-.dataTables_paginate{
-    margin-top:15px;
-}
-
-.dataTables_paginate .paginate_button{
-    border-radius:8px !important;
-}
-
-.dataTables_paginate .current{
-    background:#0D6EFD !important;
-    color:white !important;
-}
-
-/* ===========================
-   CABECERA DE LA TABLA
-=========================== */
-
-#tablaNegociacion thead th{
-    background:#0d5bd7;
-    color:#fff;
-    padding:6px 6px;
-    font-size:10px;
-    font-weight:600;
-    white-space:normal;
-    word-break:break-word;
-    line-height:1.15;
+.tabla-vacia-celda{
     text-align:center;
-    vertical-align:middle;
-    height:46px;
-    position:sticky;
-    top:0;
-    z-index:100;
-    border-radius: 2px;
+    padding:60px 20px;
+    color:#777;
+    font-weight:500;
 }
 
-/* Línea inferior del encabezado */
-#tablaNegociacion thead{
-    border-bottom:2px solid #163a5c;
+.tabla-vacia-celda h3{
+    margin:10px 0 6px;
 }
 
-#tablaNegociacion td{
-    padding:4px 8px;
-    font-size:10px;
-    line-height:1.2;
-    text-align: justify;
+.tabla-vacia-celda p{
+    margin:0;
 }
 
-#tablaNegociacion td:nth-child(2),
-#tablaNegociacion td:nth-child(12),
-#tablaNegociacion td:nth-child(10)
-{
-    max-width: 450px;
-    white-space: normal;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    line-clamp: 1; /* Propiedad estándar moderna */
-    -webkit-box-orient: vertical;
+.paginador-tabla{
+    display:flex;
+    align-items:center;
+    gap:20px;
 }
 
-#tablaNegociacion td{
-    text-align:left;
+.btn-pagina{
+
+    padding:8px 16px;
+    border:none;
+    border-radius:8px;
+    background:#0D47A1;
+    color:#FFF;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
 }
 
-#tablaNegociacion td:nth-child(3),
-#tablaNegociacion td:nth-child(4),
-#tablaNegociacion td:nth-child(5),
-#tablaNegociacion td:nth-child(6),
-#tablaNegociacion td:nth-child(7),
-#tablaNegociacion td:nth-child(8){
-
-    text-align:right;
+.btn-pagina:hover{
+    background:#0A58CA;
 }
 
-#tablaNegociacion tbody tr:nth-child(even){
-    background:#fafcff;
+.btn-pagina:disabled{
+    background:#C7D3E3;
+    cursor:not-allowed;
 }
 
-#tablaNegociacion tbody tr:hover{
-    background:#eef5ff;
-}
-
-#tablaNegociacion{
-    table-layout:auto;
-    width:100% !important;
-}
-
-/*=============================
-TABLA EXPANDIDA
-==============================*/
-
-.panel-tabla{
-    transition:all .35s ease;
-}
-
-/* Cuando el panel izquierdo está oculto */
-
-.panel-tabla.expandida{
-    margin-left:-275px;
-    width:calc(100% + 270px);
+.texto-pagina{
+    font-size:13px;
+    font-weight:600;
+    color:#355D8D;
 }
 
 /*==============================================================
@@ -1304,17 +1237,4 @@ RESPONSIVE
     .card-texto{
         width:auto;
     }
-}
-
-.fila-medicamento{
-    cursor:pointer;
-    transition:.20s;
-}
-
-.fila-medicamento:hover{
-    background:#F4F8FD;
-}
-
-.fila-seleccionada{
-    background:#E8F2FF !important;
 }

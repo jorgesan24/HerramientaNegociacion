@@ -17,9 +17,6 @@
 
     {% block estilos %}{% endblock %}
 
-    <link rel="stylesheet"
-        href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
-    
     <link rel="stylesheet" 
         href="{{ url_for('static', filename='css/menu.css') }}">
 
@@ -45,8 +42,6 @@
     {% endblock %}
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-    <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
 
     <script src="{{ url_for('static', filename='js/negociacion.js') }}"></script>
 

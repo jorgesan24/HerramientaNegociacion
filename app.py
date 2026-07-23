@@ -399,6 +399,8 @@ def negociacion():
 
     tabla = None
 
+    columnas = []
+
     FILTROS_KPI = {
         "aceptables": {
             "columna": "VALIDACION",
@@ -571,11 +573,6 @@ def negociacion():
                             )
 
                             archivo_valido = False
-
-                            return render_template(
-                                "negociacion/negociacion.html",
-                                ...
-                            )
 
                         # Eliminar filas completamente vacías
                         datos = datos.dropna(how="all")
@@ -861,11 +858,9 @@ def negociacion():
 
                     session["id_proceso"] = id_proceso
 
-                    tabla = (
-                        datos.to_dict(orient="records")
-                        if datos is not None
-                        else None
-                    )
+                    columnas = datos.columns.tolist() if datos is not None else []
+
+                    tabla = datos.to_dict(orient="records") if datos is not None else []
 
             except Exception as e:
 
@@ -915,6 +910,28 @@ def negociacion():
         }
     )
 
+    # ==========================================================
+    # Encabezado por defecto de la tabla de negociación
+    # ==========================================================
+
+    if not columnas:
+
+        columnas = [
+            "CODIGO",
+            "DESCRIPCION",
+            "VALOR OFERTADO",
+            "REGULACION",
+            "NT",
+            "REFERENCIA",
+            "PM",
+            "VALOR OBJETIVO",
+            "VALIDACION",
+            "ESTADO REGISTRO",
+            "DUPLICADO",
+            "ORIGEN",
+            "DESVIACION"
+        ]
+
     return render_template(
         "negociacion/negociacion.html",
         hojas=hojas,
@@ -928,6 +945,7 @@ def negociacion():
         id_cache=session.get("id_proceso", ""),
         estado_panel=estado_panel,
         kpis=kpis,
+        columnas=columnas,
         tabla=tabla,
         filtros_kpi=FILTROS_KPI,
         tiempo_proceso = tiempo_proceso,
