@@ -9,48 +9,35 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 // ==============================================================
-// VALIDACIÓN FILTRADA DE GOOGLE DRIVE EN MÓVILES (CORREGIDO)
+// VALIDACIÓN FILTRADA CON TRY-CATCH PARA DRIVE EN MÓVILES (FIJADO)
 // ==============================================================
 document.addEventListener("DOMContentLoaded", function() {
     const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
 
     if (inputArchivoNeg) {
         inputArchivoNeg.addEventListener("change", function (evento) {
-            // 1. Validamos que el usuario realmente haya seleccionado un archivo
+            // 1. Validación básica preventiva de selección
             if (!this.files || this.files.length === 0) return;
 
-            // PASO MAESTRO: Extraemos el primer archivo individual para leer el nombre real
-            const archivo = this.files[0];
-            console.log("SANEM Movil: Validando cambio de archivo:", archivo.name, "| Tamaño:", archivo.size);
+            try {
+                // Capturamos el archivo de forma directa
+                const archivo = this.files[0];
+                console.log("SANEM: Evaluando metadatos en try...catch ->", archivo.name);
 
-            // 2. DETECCIÓN ESTÁNDAR: Solo si cumple estas condiciones estrictas de Drive en celular
-            const esDesdeDrive = archivo.name.includes(".driveextension") ||
-                                 archivo.name.startsWith("content://") ||
-                                 (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
+                // 2. DETECCIÓN ESTÁNDAR DE ARCHIVOS PROBLEMÁTICOS DE DRIVE
+                const esDesdeDrive = archivo.name.includes(".driveextension") ||
+                                     archivo.name.startsWith("content://") ||
+                                     (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
 
-            if (esDesdeDrive) {
-                // Bloqueamos por completo el envío automático para que no se salga de la página
-                evento.preventDefault();
-                evento.stopPropagation();
-                
-                this.value = ""; // Limpiamos el input por protección
-                console.warn("SANEM Movil: Bloqueado archivo virtual de Google Drive.");
-
-                if (typeof Swal !== "undefined") {
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Archivo no válido",
-                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
-                        confirmButtonText: "Aceptar",
-                        confirmButtonColor: "#1565C0",
-                        allowOutsideClick: false,
-                        heightAuto: false
-                    });
+                if (esDesdeDrive) {
+                    // Forzamos el error de forma manual para saltar de inmediato al bloque catch
+                    throw new Error("GoogleDriveMobileDetected");
                 }
-            } else {
-                // 3. ARCHIVO LOCAL VÁLIDO (PC o Memoria Interna Celular):
-                // Dejamos que el delay en el 'onchange' del HTML haga el submit de forma nativa
-                console.log("SANEM: Archivo local aprobado. Desplegando indicador de carga.");
+
+                // ==========================================================
+                // FLUJO VÁLIDO: El archivo es un Excel local real (PC o Móvil)
+                // ==========================================================
+                console.log("SANEM: Archivo local aprobado por el try. Desplegando indicador...");
                 
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
@@ -60,6 +47,33 @@ document.addEventListener("DOMContentLoaded", function() {
                         showConfirmButton: false,
                         heightAuto: false,
                         didOpen: () => { Swal.showLoading(); }
+                    });
+                }
+                // El HTML con su delay en el onchange procesará el submit() nativo automáticamente
+
+            } catch (error) {
+                // ==========================================================
+                // INTERCEPCIÓN CONTROLADA: Captura fallas y bloquea Drive móvil
+                // ==========================================================
+                console.error("SANEM Catch: Se interceptó un archivo inválido o error de metadatos.", error);
+                
+                // Bloqueamos en seco el submit del formulario para que no se salga de la página
+                evento.preventDefault();
+                evento.stopPropagation();
+                
+                // Vaciamos el input para proteger el backend de Flask
+                inputArchivoNeg.value = ""; 
+
+                // Disparamos tu alerta corporativa controlada sin tumbar la sesión
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Archivo no válido",
+                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
+                        confirmButtonText: "Aceptar",
+                        confirmButtonColor: "#1565C0",
+                        allowOutsideClick: false,
+                        heightAuto: false
                     });
                 }
             }
