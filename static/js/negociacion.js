@@ -9,36 +9,38 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 // ==============================================================
-// VALIDACIÓN FILTRADA DE GOOGLE DRIVE EN MÓVILES (ESTABLE)
+// VALIDACIÓN FILTRADA DE GOOGLE DRIVE EN MÓVILES (CORREGIDO)
 // ==============================================================
 document.addEventListener("DOMContentLoaded", function() {
     const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
 
     if (inputArchivoNeg) {
         inputArchivoNeg.addEventListener("change", function (evento) {
+            // 1. Validamos que el usuario realmente haya seleccionado un archivo
             if (!this.files || this.files.length === 0) return;
 
+            // PASO MAESTRO: Extraemos el primer archivo individual para leer el nombre real
             const archivo = this.files[0];
-            console.log("SANEM Movil: Validando cambio de archivo:", archivo.name);
+            console.log("SANEM Movil: Validando cambio de archivo:", archivo.name, "| Tamaño:", archivo.size);
 
-            // Criterios para identificar archivos en la nube de Drive
+            // 2. DETECCIÓN ESTÁNDAR: Solo si cumple estas condiciones estrictas de Drive en celular
             const esDesdeDrive = archivo.name.includes(".driveextension") ||
                                  archivo.name.startsWith("content://") ||
                                  (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
 
             if (esDesdeDrive) {
-                // Bloqueamos por completo el envío automático del HTML
+                // Bloqueamos por completo el envío automático para que no se salga de la página
                 evento.preventDefault();
                 evento.stopPropagation();
                 
-                this.value = ""; // Limpiamos el input
-                console.warn("SANEM Movil: Bloqueado archivo virtual de Drive.");
+                this.value = ""; // Limpiamos el input por protección
+                console.warn("SANEM Movil: Bloqueado archivo virtual de Google Drive.");
 
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         icon: "warning",
                         title: "Archivo no válido",
-                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Descárguelo a la memoria local de su dispositivo.",
+                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
                         confirmButtonText: "Aceptar",
                         confirmButtonColor: "#1565C0",
                         allowOutsideClick: false,
@@ -46,8 +48,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     });
                 }
             } else {
-                // Si el archivo es local y válido, dejamos que el 'onchange' con delay del HTML haga su trabajo.
-                // Solo activamos el spinner de carga para dar excelente feedback visual
+                // 3. ARCHIVO LOCAL VÁLIDO (PC o Memoria Interna Celular):
+                // Dejamos que el delay en el 'onchange' del HTML haga el submit de forma nativa
+                console.log("SANEM: Archivo local aprobado. Desplegando indicador de carga.");
+                
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         title: "Procesando Archivo",
@@ -62,7 +66,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-
 
 $(function () {
 
@@ -279,9 +282,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const celdas = fila.querySelectorAll("td");
             const contenido = fila.innerText.toLowerCase();
 
-            const validacion = celdas[8]?.innerText.trim().toUpperCase() || "";
-            const estado = celdas[9]?.innerText.trim().toUpperCase() || "";
-            const duplicado = celdas[10]?.innerText.trim().toUpperCase() || "";
+            // Respaldo de seguridad indexado por celdas reales para evitar congelamientos
+            const validacion = celdas[8] ? celdas[8].innerText.trim().toUpperCase() : "";
+            const estado = celdas[9] ? celdas[9].innerText.trim().toUpperCase() : "";
+            const duplicado = celdas[10] ? celdas[10].innerText.trim().toUpperCase() : "";
+
 
             let mostrar = contenido.includes(texto);
 
