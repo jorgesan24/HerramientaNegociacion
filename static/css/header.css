@@ -29,7 +29,7 @@ ESTILOS DEL ENCABEZADO SUPERIOR (MÁS GRANDE)
 .btn-menu-trigger {
     background: transparent;
     border: none;
-    color: #FFFFFF !important;
+    color: #FFFFFF;
     font-size: 24px; /* Icono más grande */
     cursor: pointer;
     display: inline-flex;

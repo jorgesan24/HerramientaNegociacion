@@ -8,47 +8,85 @@ let paginaActual = 1;
 
 const filasPorPagina = 15;
 
-document.addEventListener("DOMContentLoaded", () => {
+// ==============================================================
+// BLINDAJE DE SEGURIDAD EXCLUSIVO PARA GOOGLE DRIVE EN MÓVILES
+// ==============================================================
+document.addEventListener("DOMContentLoaded", function() {
+    // Buscamos el input file dentro de tu formulario con la clase unificada
+    const inputFileNegociacion = document.querySelector(".tarjeta-subida-exclusiva input[type='file']") || document.getElementById("archivoExcelNegociacion");
 
-    console.log("negociacion.js cargado");    
-    console.log("Filtros KPI:", filtrosKPI);
-
-    const esMovil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    if (esMovil) {
-
-        Mensajes.movil(
-            "Este tipo de archivo solo puede cargarse desde un computador."
-        );
-
-        return;
-
-    }
-
-    const hojas = document.querySelectorAll(".item-hoja");
-
-    hojas.forEach(item => {
-
-        item.addEventListener("click", () => {
-
-            // Quitar selección anterior
-            hojas.forEach(h =>
-                h.classList.remove("seleccionada")
-            );
-
-            // Marcar la actual
-            item.classList.add("seleccionada");
-
-            // Marcar el radio
-            const radio = item.querySelector("input[type='radio']");
-            if (radio) {
-                radio.checked = true;
+    if (inputFileNegociacion) {
+        inputFileNegociacion.addEventListener("change", function (evento) {
+            // 1. Validamos de forma estricta que existan archivos en la cola
+            if (!this.files || this.files.length === 0) {
+                console.log("SANEM: Cambio detectado en el input pero no se seleccionó ningún archivo.");
+                return;
             }
 
+            // CORRECCIÓN CRÍTICA: Extraemos de forma exacta el primer archivo del arreglo
+            const archivoSeleccionado = this.files[0];
+            
+            console.log("SANEM: Evaluando metadatos del elemento cargado:");
+            console.log("Nombre real:", archivoSeleccionado.name);
+            console.log("Tamaño real:", archivoSeleccionado.size, "bytes");
+
+            // 2. DETECCIÓN CIENTÍFICA DE ENLACES O ARCHIVOS VIRTUALES DE DRIVE EN MÓVILES
+            // Rastrea si el nombre contiene extensiones temporales de la nube, prefijos content:// o si reporta 0 bytes en smartphones
+            const esEnlaceDriveVirtual = archivoSeleccionado.name.includes(".driveextension") || 
+                                         archivoSeleccionado.name.startsWith("content://") || 
+                                         (archivoSeleccionado.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone") || navigator.userAgent.includes("iPad")));
+
+            if (esEnlaceDriveVirtual) {
+                // FRENAMOS EN SECO EL SUBMIT ANTES DE QUE VIAJE A FLASK
+                evento.preventDefault();
+                evento.stopPropagation();
+                
+                this.value = ""; // Vaciamos el campo por completo para proteger el backend de Flask
+                console.warn("SANEM: Intento de subida bloqueado de forma exitosa. Origen: Google Drive Móvil.");
+
+                // Disparamos la alerta de SweetAlert2 estructurada con el formato corporativo
+                if (typeof Mensajes !== "undefined" && typeof Mensajes.movil === "function") {
+                    Mensajes.movil(
+                        "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
+                        "Archivo no válido"
+                    );
+                } else if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Archivo no válido",
+                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Descárguelo a la memoria local de su dispositivo.",
+                        confirmButtonText: "Aceptar",
+                        confirmButtonColor: "#1565C0",
+                        allowOutsideClick: false,
+                        heightAuto: false
+                    });
+                }
+            } else {
+                // 3. FLUJO EXITOSO: El archivo es un Excel real alojado localmente (en PC o Memoria Interna Móvil)
+                console.log("SANEM: Archivo local validado con éxito. Ejecutando envío síncrono...");
+                
+                // Desplegamos el spinner de carga para dar excelente feedback visual antes de recargar
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        title: "Procesando Archivo",
+                        text: "Analizando la estructura de la negociación, por favor espere...",
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        heightAuto: false,
+                        didOpen: () => { 
+                            Swal.showLoading(); // Lanza el spinner animado de procesamiento
+                        }
+                    });
+                }
+                
+                // Forzamos al formulario a despachar los datos limpiamente hacia el servidor
+                const formularioPadre = this.closest("form");
+                if (formularioPadre) {
+                    formularioArchivo.submit();
+                }
+            }
         });
-
-    });
-
+    }
 });
 
 $(function () {

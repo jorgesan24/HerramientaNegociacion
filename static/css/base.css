@@ -11,27 +11,78 @@
     box-sizing:border-box;
 }
 
+/* 
+PASO MAESTRO 1: Forzamos a que el navegador y el cuerpo ocupen el 100% 
+alto de la pantalla y se alineen en un bloque elástico vertical 
+*/
+html, body {
+    height: 100%;
+}
+
 body{
     font-family:"Segoe UI",Tahoma,sans-serif;
     background:#f4f7fb;
     color:#263238;
+    display: flex;
+    flex-direction: column; /* Alinea verticalmente: Header -> Contenido -> Footer */
+    justify-content: space-between;
+}
+
+/* 
+PASO MAESTRO 2: Buscamos el contenedor que encierra tus 3 tarjetas de inicio.
+Le ordenamos que consuma todo el espacio en blanco sobrante del celular.
+*/
+.inicio-layout, 
+.panel-bienvenida, 
+.referencia-layout, 
+.descargas-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Estira el contenedor hasta el fondo */
+    gap: 16px;
+    padding: 16px;
+    box-sizing: border-box;
 }
 
 /* ==========================
    TARJETAS
 ========================== */
-
 .card{
     background:white;
     border-radius:18px;
     padding:20px;
     box-shadow:0 4px 18px rgba(0,0,0,.08);
+    
+    /* Hace que cada una de las 3 tarjetas grandes se estire equitativamente */
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribuye títulos arriba e imágenes abajo */
+    align-items: center;
+    text-align: center;
+}
+
+/* Control para que el grupo de las 3 tarjetas se comporte como grilla horizontal en PC */
+.tarjetas-menu-inicio,
+.ref-bloque-inferior {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    flex: 1;
+    align-items: stretch; /* Obliga a que las 3 midan exactamente el mismo alto */
+}
+
+/* Ajuste fino para las imágenes grandes dentro de las tarjetas */
+.card img {
+    max-height: 160px;
+    width: auto;
+    object-fit: contain;
+    margin: auto;
 }
 
 /* ==========================
    BOTONES
 ========================== */
-
 .btn-principal{
     background:#0058c8;
     color:white;
@@ -60,7 +111,9 @@ body{
     background:#edf4ff;
 }
 
-/* Contenedor Base de Alertas */
+/* ==========================
+   ALERTAS Y NOTIFICACIONES
+========================== */
 .alerta-contenedor {
     display: flex;
     align-items: center;
@@ -72,14 +125,12 @@ body{
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Estilo si el mensaje es un Error (Celulares/Archivos vacíos) */
 .alerta-error {
     background-color: #fef2f2;
     border: 1px solid #fee2e2;
     color: #991b1b;
 }
 
-/* Estilo si el mensaje es de Éxito */
 .alerta-exito {
     background-color: #ecfdf5;
     border: 1px solid #d1fae5;
@@ -94,4 +145,29 @@ body{
 .alerta-texto {
     margin: 0;
     font-weight: 500;
+}
+
+/* ==============================================================
+   DISEÑO EXCLUSIVO RESPONSIVO PARA DISPOSITIVOS MÓVILES (CELULAR)
+ ==============================================================*/
+@media (max-width: 768px) {
+    /* En teléfonos, apilamos las 3 tarjetas una debajo de otra */
+    .tarjetas-menu-inicio,
+    .ref-bloque-inferior {
+        flex-direction: column;
+        flex: 1;
+    }
+
+    /* Cada tarjeta consumirá una porción exacta y limpia del alto del smartphone */
+    .card {
+        background: white;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.08);
+        box-sizing: border-box;
+    }
+
+    .card img {
+        max-height: 80px; /* Reducimos la imagen en móvil para que no desborde */
+    }
 }

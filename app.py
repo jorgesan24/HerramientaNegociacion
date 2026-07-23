@@ -15,6 +15,7 @@ import sqlite3
 from data_manager import obtener_detalle_facturacion
 import urllib.parse
 from flask import send_from_directory
+from negociaciones_repository import inicializar_bd
 
 from services.archivo_service import (
     guardar_archivo,

@@ -19,11 +19,11 @@ Panel superior
 ======================================*/
 .panel-superior {
     display: grid;
-    grid-template-columns: 1fr 0.5fr 1fr !important; 
+    grid-template-columns: 1fr 0.5fr 1fr; 
     gap: 14px;
     margin: 10px 20px;
-    align-items: stretch !important; /* Alinea los 3 paneles perfectamente por su borde superior */
-    box-sizing: border-box !important;
+    align-items: stretch; /* Alinea los 3 paneles perfectamente por su borde superior */
+    box-sizing: border-box;
 }
 
 /*==============================================================
@@ -43,10 +43,10 @@ Panel filtros
 }
 
 .grupo-filtros {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 10px !important;
-    width: 100% !important;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
 }
 
 .card-radio {
@@ -117,8 +117,8 @@ Panel filtros
     color: #35506E;
     font-size: 13px;
     font-weight: 600;
-    margin-top: 0 !important;
-    margin-bottom: 4px !important;
+    margin-top: 0;
+    margin-bottom: 4px;
 }
 
 /* Check */
@@ -161,7 +161,7 @@ CONTENEDOR PRINCIPAL (CAJA BLANCA)
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    display: flex !important;
+    display: flex;
     height: 100%;
 }
 
@@ -321,10 +321,10 @@ Panel Derecho
 
 .panel-valores-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) !important; /* Columna izquierda fija + 3 fluidas */
+    grid-template-columns: repeat(3, 1fr); /* Columna izquierda fija + 3 fluidas */
     gap: 10px;
-    width: 100% !important;
-    box-sizing: border-box !important;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Estilo base de la tarjeta compacta (80px de alto como el modal) */
@@ -465,13 +465,13 @@ ESTILOS INTERNOS DE LA TABLA (IGUAL AL MODAL)
 }
 
 .tabla-detalle tbody tr:hover {
-    background-color: #EDF5FF !important;
+    background-color: #EDF5FF;
     cursor: pointer;
 }
 
 /* Fila activa seleccionada en la grilla */
 .tabla-detalle tbody tr.fila-seleccionada {
-    background-color: #DCE7F5 !important;
+    background-color: #DCE7F5;
 }
 
 /*==============================================================

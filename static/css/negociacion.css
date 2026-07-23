@@ -2,83 +2,95 @@ html{
     font-size:60%;
 }
 
-/*=============================
-PANEL ARCHIVO
-=============================*/
-
-.panel-archivo{
-    margin-top:10px;
-    margin-bottom:20px;
+/*==============================================================
+ESTILOS EXCLUSIVOS PARA EL PANEL DE CARGA SANEM (BARRA COMPLETA)
+==============================================================*/
+.tarjeta-subida-exclusiva {
+    background: white;
+    border-radius: 12px; /* Bordes ligeramente más sutiles para la barra */
+    padding: 12px 24px; /* Espaciado interno horizontal elegante */
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    display: flex; /* Convertimos la barra en un contenedor horizontal flexible */
+    flex-direction: row; /* Elementos uno al lado del otro */
+    align-items: center; /* Centrado vertical perfecto de los elementos */
+    justify-content: space-between; /* Distribuye: izquierda, centro y derecha */
+    width: 100%; /* Ocupa todo el ancho de la pantalla */
+    max-width: 100%; /* Rompe el límite anterior de 480px */
+    height: auto;
+    box-sizing: border-box;
+    margin-bottom: 20px;
 }
 
-.archivo-card{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:white;
-    border-radius:16px;
-    padding:10px;
-    box-shadow:0 8px 18px rgba(0,0,0,.08);
+/* 1. TEXTO IZQUIERDO: "Negociación cargada:" */
+.tarjeta-subida-exclusiva .archivo-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #263238;
+    text-align: left;
+    margin: 0; /* Quitamos márgenes para alinear horizontalmente */
+    white-space: nowrap; /* Evita que el texto se parta en dos líneas */
 }
 
-.archivo-label{
-    font-weight: bold;
-    color:#5a5a5a;
-    font-size: 12px;
+/* 2. CONTENEDOR CENTRAL: Recuadro del archivo Excel */
+.tarjeta-subida-exclusiva .archivo-info {
+    flex: 1; /* Toma el espacio del centro */
+    display: flex;
+    justify-content: flex-start; /* Alinea el recuadro hacia la izquierda del centro */
+    margin: 0 20px; /* Da aire entre el texto izquierdo y el botón derecho */
 }
 
-.archivo-info{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    flex:1;
-    margin-left:25px;
+.tarjeta-subida-exclusiva .archivo-nombre {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px; /* Espaciado interno horizontal entre el icono, texto y check */    
+    /* COLORES DE LA CAJA: Fondo gris ultra-claro y borde sutil */
+    background-color: #F8FAFC; 
+    border: 1px solid #E2E8F0; 
+    border-radius: 12px; /* Esquinas redondeadas suaves idénticas a la imagen */    
+    padding: 10px 18px;
+    box-sizing: border-box;
+    width: auto;
+    font-weight: 700;
 }
 
-.archivo-nombre{
-    display:flex;
-    align-items:center;
-    background:#f8fbff;
-    border:1px solid #d8e5f3;
-    border-radius:12px;
-    padding:10px 14px;
-    min-width:280px;
-    font-weight:600;
+.tarjeta-subida-exclusiva .icono-excel {
+    height: 20px;
+    width: auto;
+    vertical-align: middle;
+}
+
+.tarjeta-subida-exclusiva .texto-archivo {
     font-size: 13px;
+    font-weight: 500;
+    color: #455a64;
 }
 
-.archivo-ok{
-    color:#17b54d;
-    font-size:18px;
-    font-weight:bold;
-    margin-left:18px;
+/* COLORES DEL CHECK (✔): Verde vibrante corporativo */
+.tarjeta-subida-exclusiva .archivo-ok {
+    color: #10B981; /* Color verde esmeralda idéntico al de tu imagen */
+    font-size: 16px;
+    font-weight: 700;
+    display: inline-block;
+    margin-left: 4px;
 }
 
-.form-cambiar{
-    
-    padding-right:20px;
-    margin-right: 18px;
+/* 3. FORMULARIO Y BOTÓN EXTREMO DERECHO: "Cambiar archivo" */
+.tarjeta-subida-exclusiva .form-cambiar {
+    display: flex;
+    justify-content: flex-end; /* Empuja el botón al extremo derecho */
+    margin: 0;
+    width: auto;
 }
 
-.check{
-    margin-left:auto;
-    color:#16a34a;
-    font-size:22px;
-    font-weight:bold;
-}
-
-.icono-excel{
-    width:26px;
-    height:26px;
-    object-fit:contain;
-    margin-right:12px;
-}
-
-.texto-archivo{
-    flex:1;
-    color:#2f3d4f;
-    font-size:14px;
-    font-weight:500;
+.tarjeta-subida-exclusiva .form-cambiar .btn-secundario {
+    display: inline-flex;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    white-space: nowrap;
 }
 
 /*--------------------------------------------------
@@ -936,7 +948,7 @@ BLOQUES
     padding:14px 20px 24px 20px;
     margin:12px 20px;
     box-shadow:0 8px 18px rgba(0,0,0,.05);
-    height: auto !important; /* Fuerza a que el contenedor se estire según su contenido */
+    height: auto; /* Fuerza a que el contenedor se estire según su contenido */
     overflow: hidden;         /* Asegura que los elementos hijos no rompan los bordes redondeados */
 }
 
@@ -1122,7 +1134,7 @@ TARJETA OTRO
 ==============================================================*/
 
 .card-texto{
-    width:100% !important;
+    width:100%;
     height: 80px;
     border-radius:14px;
     border:2px dashed #BFD5F3;
@@ -1198,7 +1210,7 @@ OCULTAR TARJETA OTRO
 ==============================================================*/
 
 .oculto{
-    display:none !important;
+    display:none;
 }
 
 /*==============================================================
