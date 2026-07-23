@@ -9,48 +9,32 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 // ==============================================================
-// BLINDAJE DE SEGURIDAD EXCLUSIVO PARA GOOGLE DRIVE EN MÓVILES
+// VALIDACIÓN FILTRADA DE GOOGLE DRIVE EN MÓVILES (ESTABLE)
 // ==============================================================
 document.addEventListener("DOMContentLoaded", function() {
-    // Buscamos el input file dentro de tu formulario con la clase unificada
-    const inputFileNegociacion = document.querySelector(".tarjeta-subida-exclusiva input[type='file']") || document.getElementById("archivoExcelNegociacion");
+    const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
 
-    if (inputFileNegociacion) {
-        inputFileNegociacion.addEventListener("change", function (evento) {
-            // 1. Validamos de forma estricta que existan archivos en la cola
-            if (!this.files || this.files.length === 0) {
-                console.log("SANEM: Cambio detectado en el input pero no se seleccionó ningún archivo.");
-                return;
-            }
+    if (inputArchivoNeg) {
+        inputArchivoNeg.addEventListener("change", function (evento) {
+            if (!this.files || this.files.length === 0) return;
 
-            // CORRECCIÓN CRÍTICA: Extraemos de forma exacta el primer archivo del arreglo
-            const archivoSeleccionado = this.files[0];
-            
-            console.log("SANEM: Evaluando metadatos del elemento cargado:");
-            console.log("Nombre real:", archivoSeleccionado.name);
-            console.log("Tamaño real:", archivoSeleccionado.size, "bytes");
+            const archivo = this.files[0];
+            console.log("SANEM Movil: Validando cambio de archivo:", archivo.name);
 
-            // 2. DETECCIÓN CIENTÍFICA DE ENLACES O ARCHIVOS VIRTUALES DE DRIVE EN MÓVILES
-            // Rastrea si el nombre contiene extensiones temporales de la nube, prefijos content:// o si reporta 0 bytes en smartphones
-            const esEnlaceDriveVirtual = archivoSeleccionado.name.includes(".driveextension") || 
-                                         archivoSeleccionado.name.startsWith("content://") || 
-                                         (archivoSeleccionado.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone") || navigator.userAgent.includes("iPad")));
+            // Criterios para identificar archivos en la nube de Drive
+            const esDesdeDrive = archivo.name.includes(".driveextension") ||
+                                 archivo.name.startsWith("content://") ||
+                                 (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
 
-            if (esEnlaceDriveVirtual) {
-                // FRENAMOS EN SECO EL SUBMIT ANTES DE QUE VIAJE A FLASK
+            if (esDesdeDrive) {
+                // Bloqueamos por completo el envío automático del HTML
                 evento.preventDefault();
                 evento.stopPropagation();
                 
-                this.value = ""; // Vaciamos el campo por completo para proteger el backend de Flask
-                console.warn("SANEM: Intento de subida bloqueado de forma exitosa. Origen: Google Drive Móvil.");
+                this.value = ""; // Limpiamos el input
+                console.warn("SANEM Movil: Bloqueado archivo virtual de Drive.");
 
-                // Disparamos la alerta de SweetAlert2 estructurada con el formato corporativo
-                if (typeof Mensajes !== "undefined" && typeof Mensajes.movil === "function") {
-                    Mensajes.movil(
-                        "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
-                        "Archivo no válido"
-                    );
-                } else if (typeof Swal !== "undefined") {
+                if (typeof Swal !== "undefined") {
                     Swal.fire({
                         icon: "warning",
                         title: "Archivo no válido",
@@ -62,10 +46,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     });
                 }
             } else {
-                // 3. FLUJO EXITOSO: El archivo es un Excel real alojado localmente (en PC o Memoria Interna Móvil)
-                console.log("SANEM: Archivo local validado con éxito. Ejecutando envío síncrono...");
-                
-                // Desplegamos el spinner de carga para dar excelente feedback visual antes de recargar
+                // Si el archivo es local y válido, dejamos que el 'onchange' con delay del HTML haga su trabajo.
+                // Solo activamos el spinner de carga para dar excelente feedback visual
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         title: "Procesando Archivo",
@@ -73,34 +55,49 @@ document.addEventListener("DOMContentLoaded", function() {
                         allowOutsideClick: false,
                         showConfirmButton: false,
                         heightAuto: false,
-                        didOpen: () => { 
-                            Swal.showLoading(); // Lanza el spinner animado de procesamiento
-                        }
+                        didOpen: () => { Swal.showLoading(); }
                     });
-                }
-                
-                // Forzamos al formulario a despachar los datos limpiamente hacia el servidor
-                const formularioPadre = this.closest("form");
-                if (formularioPadre) {
-                    formularioArchivo.submit();
                 }
             }
         });
     }
 });
 
+
 $(function () {
+
+    // ==============================================================
+    // SELECCIÓN VISUAL FIJA PARA LAS HOJAS DE EXCEL (RESUELTO CON LABELS)
+    // ==============================================================
+    // Intercepta el click sobre las etiquetas label de las hojas cargadas
+    $(document).on("click", ".lista-hojas .item-hoja", function (e) {
+        console.log("SANEM: Capturando selección de hoja física ->", $(this).find(".nombre-hoja").text().trim());
+
+        // 1. Removemos la clase de selección previa de todas las demás tarjetas de la lista
+        $(".lista-hojas .item-hoja").css({
+            "background-color": "transparent",
+            "color": "#4A6585",
+            "border": "1px solid #D6E2F1"
+        }).removeClass("seleccionada");
+
+        // 2. Aplicamos el sombreado azul pastel corporativo de forma fija a la hoja clickeada
+        $(this).css({
+            "background-color": "#EAF3FF",
+            "color": "#0D47A1",
+            "border": "1px solid #B3D7FF"
+        }).addClass("seleccionada");
+        
+        // Forzamos al radio button interno a marcarse por si el click dio en el texto o la imagen
+        $(this).find("input[type='radio']").prop("checked", true);
+    });
 
     //==========================
     // Abrir modal
     //==========================
 
     $("#btnExportar").on("click", function () {
-
         $("#modalExportar").addClass("activo");
-
         $("body").css("overflow", "hidden");
-
     });
 
     //==========================
@@ -120,13 +117,9 @@ $(function () {
     //==========================
 
     $("#modalExportar").on("click", function (e) {
-
         if (e.target === this) {
-
             cerrarModal();
-
         }
-
     });
 
     //==========================
@@ -134,13 +127,9 @@ $(function () {
     //==========================
 
     $(document).on("keydown", function (e) {
-
         if (e.key === "Escape") {
-
             cerrarModal();
-
         }
-
     });
 
     //==========================
@@ -148,11 +137,8 @@ $(function () {
     //==========================
 
     function cerrarModal() {
-
         $("#modalExportar").removeClass("activo");
-
         $("body").css("overflow", "auto");
-
     }
 
 });
@@ -182,54 +168,42 @@ $(".opcion-card input").on("change", function(){
 const chkOtro = document.getElementById("planOtro");
 const cardOtro = document.getElementById("planOtroCard");
 
-cardOtro.classList.add("oculto");
+if (cardOtro) {
+    cardOtro.classList.add("oculto");
+}
 
-chkOtro.addEventListener("change", function(){
-
-    if(this.checked){
-
-        cardOtro.classList.remove("oculto");
-
-    }else{
-
-        cardOtro.classList.add("oculto");
-
-        document.getElementById("plan_otro").value="";
-
-    }
-
-});
+if (chkOtro && cardOtro) {
+    chkOtro.addEventListener("change", function(){
+        if(this.checked){
+            cardOtro.classList.remove("oculto");
+        }else{
+            cardOtro.classList.add("oculto");
+            document.getElementById("plan_otro").value="";
+        }
+    });
+}
 
 $(document).ready(function () {
 
     $("#toggleValidacion").off("click").on("click", function () {
-
         $("#contenidoValidacion").slideToggle(250);
-
         const icono = $("#iconoToggleValidacion");
-
         icono.text(
             icono.text() === "▲"
-                ? "▼"
-                : "▲"
+            ? "▼"
+            : "▲"
         );
-
     });
 
     $("#toggleHojas").off("click").on("click", function () {
-
         $("#contenidoHojas").slideToggle(250);
-
         const icono = $("#iconoToggleHojas");
-
         icono.text(
             icono.text() === "▲"
-                ? "▼"
-                : "▲"
+            ? "▼"
+            : "▲"
         );
-
         $("#panelTabla").toggleClass("expandida");
-
     });
 
 });
@@ -257,7 +231,6 @@ function renderizarPagina() {
         paginaActual = totalPaginas;
 
     const inicio = (paginaActual - 1) * filasPorPagina;
-
     const fin = inicio + filasPorPagina;
 
     filas.forEach(f => f.style.display = "none");
@@ -269,15 +242,14 @@ function renderizarPagina() {
     const contador = document.getElementById("contadorResultadosBuscador");
 
     if (contador) {
-
         contador.innerHTML = `
-            Resultados encontrados:
-            <strong>${filasFiltradas.length}</strong>
-            |
-            Página
-            <strong>${paginaActual}</strong>
-            de
-            <strong>${totalPaginas}</strong>
+        Resultados encontrados:
+        <strong>${filasFiltradas.length}</strong>
+        |
+        Página
+        <strong>${paginaActual}</strong>
+        de
+        <strong>${totalPaginas}</strong>
         `;
     }
     construirPaginador(totalPaginas);
@@ -292,9 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     filas = [...tabla.querySelectorAll("tbody tr")];
 
     const buscador = document.getElementById("buscarTabla");
-
     const combo = document.getElementById("filtroTabla");
-
     const contador = document.getElementById("contadorResultadosBuscador");
 
     function filtrarTabla() {
@@ -302,41 +272,31 @@ document.addEventListener("DOMContentLoaded", () => {
         filasFiltradas = [];
 
         const texto = buscador.value.toLowerCase().trim();
-
         const filtro = combo.value;
 
         filas.forEach(fila => {
 
             const celdas = fila.querySelectorAll("td");
-
             const contenido = fila.innerText.toLowerCase();
 
             const validacion = celdas[8]?.innerText.trim().toUpperCase() || "";
-
             const estado = celdas[9]?.innerText.trim().toUpperCase() || "";
-
             const duplicado = celdas[10]?.innerText.trim().toUpperCase() || "";
 
             let mostrar = contenido.includes(texto);
 
             if (mostrar) {
-
                 switch (filtro) {
-
                     case "ACEPTAR":
                         mostrar = validacion === "ACEPTAR";
                         break;
-
                     case "RENEGOCIAR":
                         mostrar = validacion === "RENEGOCIAR";
                         break;
-
                     case "DUPLICADO":
                         mostrar = duplicado === "DUPLICADO";
                         break;
-
                     case "ACTIVO":
-
                         mostrar = [
                             "VIGENTE",
                             "EN TRAMITE RENOV",
@@ -345,11 +305,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             "APME",
                             "MVND"
                         ].includes(estado);
-
                         break;
-
                     case "NO ACTIVO":
-
                         mostrar = [
                             "VENCIDO",
                             "NEGADO",
@@ -367,78 +324,62 @@ document.addEventListener("DOMContentLoaded", () => {
                             "CANCELADO",
                             "PERDIDA FUERZA EJEC"
                         ].includes(estado);
-
                         break;
                 }
-
             }
 
             if (mostrar) {
-
                 filasFiltradas.push(fila);
-
             }
 
         });
 
         if (contador) {
-
             paginaActual = 1;
-
             renderizarPagina();
-
         }
-
     }
 
-    buscador.addEventListener("keyup", filtrarTabla);
+    if (buscador) buscador.addEventListener("keyup", filtrarTabla);
 
-    combo.addEventListener("change", () => {
-
-    document
-            .querySelectorAll(".indicador-card")
-            .forEach(c => c.classList.remove("activo"));
-
-        const tarjeta = Object.keys(mapaTarjetas)
-            .find(k => mapaTarjetas[k] === combo.value);
-
-        if (tarjeta) {
-
-            document
-                .querySelector(`.indicador-card[data-filtro="${tarjeta}"]`)
-                ?.classList.add("activo");
-
-        }
-
-        filtrarTabla();
-
-    });
-
-    document
-    .querySelectorAll(".indicador-card[data-filtro]")
-    .forEach(card => {
-
-        card.addEventListener("click", function () {
-
-            // Quitar selección anterior
+    if (combo) {
+        combo.addEventListener("change", () => {
             document
                 .querySelectorAll(".indicador-card")
                 .forEach(c => c.classList.remove("activo"));
 
-            // Activar tarjeta
-            this.classList.add("activo");
+            const tarjeta = Object.keys(mapaTarjetas)
+                .find(k => mapaTarjetas[k] === combo.value);
 
-            // Cambiar el combo
-            const filtro = this.dataset.filtro;
-
-            combo.value = mapaTarjetas[filtro] || "todos";
-
-            // Aplicar filtro
+            if (tarjeta) {
+                document
+                    .querySelector(`.indicador-card[data-filtro="${tarjeta}"]`)
+                    ?.classList.add("activo");
+            }
             filtrarTabla();
-
         });
+    }
 
-    });
+    document
+        .querySelectorAll(".indicador-card[data-filtro]")
+        .forEach(card => {
+            card.addEventListener("click", function () {
+                // Quitar selección anterior
+                document
+                    .querySelectorAll(".indicador-card")
+                    .forEach(c => c.classList.remove("activo"));
+
+                // Activar tarjeta
+                this.classList.add("activo");
+
+                // Cambiar el combo
+                const filtro = this.dataset.filtro;
+                if (combo) combo.value = mapaTarjetas[filtro] || "todos";
+
+                // Aplicar filtro
+                filtrarTabla();
+            });
+        });
 
     filtrarTabla();
 
@@ -482,5 +423,4 @@ function construirPaginador(totalPaginas) {
     paginador.appendChild(anterior);
     paginador.appendChild(info);
     paginador.appendChild(siguiente);
-
 }
