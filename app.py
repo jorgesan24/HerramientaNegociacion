@@ -1,5 +1,5 @@
 ##app
-from flask import Flask, render_template, request, send_file, session
+from flask import Flask, render_template, request, send_file, session, flash, redirect, url_for
 import pandas as pd
 import io
 import os
@@ -16,6 +16,8 @@ from data_manager import obtener_detalle_facturacion
 import urllib.parse
 from flask import send_from_directory
 from negociaciones_repository import inicializar_bd
+from repository_manager import guardar_negociacion
+import tempfile
 
 from services.archivo_service import (
     guardar_archivo,
@@ -37,6 +39,20 @@ cache_negociaciones = {}
 app = Flask(__name__)
 app.secret_key = "TuClaveSuperSecreta"
 
+inicializar_bd()
+
+# Definir una carpeta temporal dentro de tu propio proyecto
+dir_temporal = os.path.join(os.path.dirname(__file__), 'tmp_uploads')
+
+# Crear la carpeta si no existe
+if not os.path.exists(dir_temporal):
+    os.makedirs(dir_temporal, exist_ok=True)
+
+# Asignar la carpeta temporal a las variables de entorno de Python
+os.environ['TMPDIR'] = dir_temporal
+os.environ['TEMP'] = dir_temporal
+os.environ['TMP'] = dir_temporal
+tempfile.tempdir = dir_temporal
 
 @app.route("/")
 def inicio():
@@ -376,8 +392,23 @@ def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
 
     return datos, coincidencias
 
-@app.route("/negociacion", methods=["GET", "POST"])
+@app.route('/negociacion', methods=['POST'])
 def negociacion():
+    try:
+        if "archivo" in request.files:
+            archivo = request.files["archivo"]
+            
+            # Verificar si se envió un archivo con nombre válido
+            if archivo.filename == '':
+                flash("No se seleccionó ningún archivo o la ruta es inválida.", "warning")
+                return redirect(request.url)
+                
+            # Procesar el archivo Excel aquí...
+            
+    except Exception as e:
+        print(f"Error detectado durante la subida: {e}")
+        flash("Ocurrió un problema procesando el archivo desde el dispositivo. Por favor descargue el archivo a la memoria interna.", "error")
+        return redirect(url_for('negociacion'))
 
     hojas = []
     datos = None
@@ -1182,6 +1213,11 @@ def exportar_negociacion():
     ruta_salida = os.path.join(
         UPLOAD_FOLDER,
         nombre_salida
+    )
+
+    consecutivo = guardar_negociacion(
+        encabezado,
+        datos
     )
 
     ruta = data_manager.generar_excel_negociacion(

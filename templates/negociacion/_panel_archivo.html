@@ -35,15 +35,12 @@
 
             <label class="btn-secundario">
                 Cambiar archivo
-                
-                <!-- CORRECCIÓN CLAVE: Agregamos una pausa de 150ms nativa para estabilizar el archivo en móviles -->
                 <input
                     type="file"
                     name="archivo"
                     id="archivoExcelNegociacion"
                     accept=".xlsx,.xls"
-                    hidden
-                    onchange="setTimeout(() => { this.form.submit(); }, 150);">
+                    hidden>
             </label>
 
         </form>

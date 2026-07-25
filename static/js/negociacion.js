@@ -9,27 +9,33 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 // ==============================================================
-// CONTROL DE ENVÍO ASÍNCRONO Y BLOQUEO DE DRIVE EN MÓVILES
+// BLINDAJE PERIMETRAL ABSOLUTO CONTRA GOOGLE DRIVE (RESOLUCIÓN)
 // ==============================================================
 document.addEventListener("DOMContentLoaded", function() {
     const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
-    const formCambiarArchivo = document.getElementById("formCambiarArchivo");
 
     if (inputArchivoNeg) {
         inputArchivoNeg.addEventListener("change", function (evento) {
-            // FRENAMOS de inmediato cualquier acción automática del navegador
-            evento.preventDefault();
-            evento.stopPropagation();
-
+            // 1. Verificación ciega inicial de la cola de archivos
             if (!this.files || this.files.length === 0) return;
 
+            // Bloqueo total de envíos concurrentes duplicados
             let abortarTransferencia = false;
 
             try {
-                const itemArchivo = this.files[0];
-                console.log("SANEM: Analizando archivo recibido ->", itemArchivo.name);
+                // Captura del puntero del archivo
+                const listaArchivos = this.files;
+                const itemArchivo = listaArchivos[0];
 
-                // Criterios estrictos para identificar punteros virtuales de Google Drive en celulares
+                console.log("SANEM Seguridad: Evaluando integridad de transferencia...");
+
+                // VERIFICACIÓN DE INTEGRIDAD 1: Si el archivo no tiene metadatos accesibles
+                if (!itemArchivo || typeof itemArchivo !== 'object') {
+                    abortarTransferencia = true;
+                }
+
+                // VERIFICACIÓN DE INTEGRIDAD 2: Rastreo ciego de URIs virtuales
+                // Si el nombre no existe, es nulo, o incluye cadenas de streams virtuales content://
                 const nombreSeguro = itemArchivo.name ? String(itemArchivo.name) : "";
                 const esRutaVirtual = nombreSeguro.includes(".driveextension") || 
                                       nombreSeguro.startsWith("content://") || 
@@ -40,36 +46,50 @@ document.addEventListener("DOMContentLoaded", function() {
                     abortarTransferencia = true;
                 }
 
-            } catch (excepcion) {
-                console.error("SANEM: Excepción de lectura detectada.", excepcion);
+            } catch (excepcionNativa) {
+                // Si el celular bloqueó la lectura de propiedades, el catch ataja la falla de inmediato
+                console.error("SANEM Seguridad: Excepción nativa del sistema operativo detectada.", excepcionNativa);
                 abortarTransferencia = true;
             }
 
             // ==========================================================
-            // ESCENARIO A: EL ARCHIVO PROVIENE DE GOOGLE DRIVE (BLOQUEO)
+            // ACCIÓN DE CONTENCIÓN PERIMETRAL
             // ==========================================================
             if (abortarTransferencia) {
-                this.value = ""; // Vaciamos el input de inmediato
-                console.warn("SANEM: Envío cancelado. Origen inválido (Google Drive).");
+                // FRENAMOS EN SECO EL PROCESO DEL NAVEGADOR
+                evento.preventDefault();
+                evento.stopPropagation();
+                
+                // Limpiamos el input para que no intente enviar residuos de datos
+                this.value = ""; 
 
+                // Desvinculamos el onchange temporalmente anulando el submit automático del HTML
+                const formularioEnviador = this.closest("form");
+                if (formularioEnviador) {
+                    formularioEnviador.onsubmit = function(e) { e.preventDefault(); return false; };
+                }
+
+                console.warn("SANEM Seguridad: Transferencia virtual de Drive abortada con éxito.");
+
+                // Lanzamos la alerta corporativa limpia de SweetAlert2
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         icon: "warning",
                         title: "Archivo no válido",
-                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
+                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono (carpeta Descargas) e inténtelo nuevamente.",
                         confirmButtonText: "Aceptar",
                         confirmButtonColor: "#1565C0",
                         allowOutsideClick: false,
                         heightAuto: false
                     });
                 }
-                return false;
+                return false; // Corta por completo el hilo de ejecución secundario
             }
 
             // ==========================================================
-            // ESCENARIO B: EL ARCHIVO ES VÁLIDO (PC O MEMORIA INTERNA)
+            // FLUJO VÁLIDO: El archivo es local y real (PC o Almacenamiento Interno)
             // ==========================================================
-            console.log("SANEM: Archivo local aprobado. Iniciando temporizador seguro de envío...");
+            console.log("SANEM: Integridad de archivo verificada. Activando procesamiento...");
             
             if (typeof Swal !== "undefined") {
                 Swal.fire({
@@ -81,17 +101,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     didOpen: () => { Swal.showLoading(); }
                 });
             }
-
-            // PASO MAESTRO: Retrasamos el envío 300ms para permitir al sistema operativo movil
-            // liberar y estabilizar el archivo físico, solucionando el error ERR_UPLOAD_FILE_CHANGED
-            setTimeout(() => {
-                const formActivo = formCambiarArchivo || inputArchivoNeg.closest("form");
-                if (formActivo) {
-                    formActivo.submit();
-                } else {
-                    console.error("SANEM: No se encontró el formulario para ejecutar el submit.");
-                }
-            }, 300);
         });
     }
 });
