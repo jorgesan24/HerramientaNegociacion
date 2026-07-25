@@ -9,20 +9,22 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 // ==============================================================
-// VALIDACIÓN FILTRADA CON TRY-CATCH PARA DRIVE EN MÓVILES (FIJADO)
+// VALIDACIÓN FILTRADA CON BANDERA DE CONTROL ASÍNCRONA (FIJADO)
 // ==============================================================
 document.addEventListener("DOMContentLoaded", function() {
     const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
 
     if (inputArchivoNeg) {
         inputArchivoNeg.addEventListener("change", function (evento) {
-            // 1. Validación básica preventiva de selección
+            // 1. Validación básica de selección
             if (!this.files || this.files.length === 0) return;
 
+            // BANDERA DE CONTROL MAESTRA: Asumimos inicialmente que el archivo es válido
+            let esArchivoPermitido = true;
+
             try {
-                // Capturamos el archivo de forma directa
                 const archivo = this.files[0];
-                console.log("SANEM: Evaluando metadatos en try...catch ->", archivo.name);
+                console.log("SANEM: Evaluando metadatos con bandera ->", archivo.name);
 
                 // 2. DETECCIÓN ESTÁNDAR DE ARCHIVOS PROBLEMÁTICOS DE DRIVE
                 const esDesdeDrive = archivo.name.includes(".driveextension") ||
@@ -30,41 +32,33 @@ document.addEventListener("DOMContentLoaded", function() {
                                      (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
 
                 if (esDesdeDrive) {
-                    // Forzamos el error de forma manual para saltar de inmediato al bloque catch
+                    esArchivoPermitido = false; // Cambiamos la bandera para bloquear todo
                     throw new Error("GoogleDriveMobileDetected");
                 }
 
-                // ==========================================================
-                // FLUJO VÁLIDO: El archivo es un Excel local real (PC o Móvil)
-                // ==========================================================
-                console.log("SANEM: Archivo local aprobado por el try. Desplegando indicador...");
-                
-                if (typeof Swal !== "undefined") {
-                    Swal.fire({
-                        title: "Procesando Archivo",
-                        text: "Analizando la estructura de la negociación, por favor espere...",
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        heightAuto: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
-                }
-                // El HTML con su delay en el onchange procesará el submit() nativo automáticamente
-
             } catch (error) {
-                // ==========================================================
-                // INTERCEPCIÓN CONTROLADA: Captura fallas y bloquea Drive móvil
-                // ==========================================================
-                console.error("SANEM Catch: Se interceptó un archivo inválido o error de metadatos.", error);
-                
-                // Bloqueamos en seco el submit del formulario para que no se salga de la página
+                esArchivoPermitido = false; // El catch asegura el bloqueo absoluto
+                console.error("SANEM Catch: Intercepción activa por bandera.", error);
+            }
+
+            // ==========================================================
+            // EVALUACIÓN DEL SEMÁFORO LÓGICO DE CONTROL
+            // ==========================================================
+            if (!esArchivoPermitido) {
+                // 1. FRENAMOS en seco el hilo asíncrono del navegador
                 evento.preventDefault();
                 evento.stopPropagation();
                 
-                // Vaciamos el input para proteger el backend de Flask
-                inputArchivoNeg.value = ""; 
+                // 2. Rompemos la acción de envío del formulario padre de inmediato
+                const formPadre = this.closest("form");
+                if (formPadre) {
+                    formPadre.onsubmit = function(e) { e.preventDefault(); return false; };
+                }
 
-                // Disparamos tu alerta corporativa controlada sin tumbar la sesión
+                // 3. Vaciamos el input y reseteamos el elemento
+                this.value = ""; 
+
+                // 4. Lanzamos la alerta controlada de SweetAlert2 sin alterar la página
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         icon: "warning",
@@ -76,7 +70,25 @@ document.addEventListener("DOMContentLoaded", function() {
                         heightAuto: false
                     });
                 }
+                return false; // Corta la ejecución de cualquier otra función paralela
             }
+
+            // ==========================================================
+            // FLUJO VÁLIDO: El archivo es local y real (PC o Memoria Interna)
+            // ==========================================================
+            console.log("SANEM: Bandera aprobada. Desplegando indicador de procesamiento...");
+            
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    title: "Procesando Archivo",
+                    text: "Analizando la estructura de la negociación, por favor espere...",
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    heightAuto: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+            }
+            // Aquí el delay controlado del onchange en el HTML ejecutará el submit seguro.
         });
     }
 });
