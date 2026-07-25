@@ -9,97 +9,73 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 // ==============================================================
-// BLINDAJE PERIMETRAL ABSOLUTO CONTRA GOOGLE DRIVE (RESOLUCIÓN)
+// VALIDACIÓN FILTRADA CON TRY-CATCH PARA DRIVE EN MÓVILES (FIJADO)
 // ==============================================================
 document.addEventListener("DOMContentLoaded", function() {
     const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
 
     if (inputArchivoNeg) {
         inputArchivoNeg.addEventListener("change", function (evento) {
-            // 1. Verificación ciega inicial de la cola de archivos
+            // 1. Validación básica preventiva de selección
             if (!this.files || this.files.length === 0) return;
 
-            // Bloqueo total de envíos concurrentes duplicados
-            let abortarTransferencia = false;
-
             try {
-                // Captura del puntero del archivo
-                const listaArchivos = this.files;
-                const itemArchivo = listaArchivos[0];
+                // Capturamos el archivo de forma directa
+                const archivo = this.files[0];
+                console.log("SANEM: Evaluando metadatos en try...catch ->", archivo.name);
 
-                console.log("SANEM Seguridad: Evaluando integridad de transferencia...");
+                // 2. DETECCIÓN ESTÁNDAR DE ARCHIVOS PROBLEMÁTICOS DE DRIVE
+                const esDesdeDrive = archivo.name.includes(".driveextension") ||
+                                     archivo.name.startsWith("content://") ||
+                                     (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
 
-                // VERIFICACIÓN DE INTEGRIDAD 1: Si el archivo no tiene metadatos accesibles
-                if (!itemArchivo || typeof itemArchivo !== 'object') {
-                    abortarTransferencia = true;
+                if (esDesdeDrive) {
+                    // Forzamos el error de forma manual para saltar de inmediato al bloque catch
+                    throw new Error("GoogleDriveMobileDetected");
                 }
 
-                // VERIFICACIÓN DE INTEGRIDAD 2: Rastreo ciego de URIs virtuales
-                // Si el nombre no existe, es nulo, o incluye cadenas de streams virtuales content://
-                const nombreSeguro = itemArchivo.name ? String(itemArchivo.name) : "";
-                const esRutaVirtual = nombreSeguro.includes(".driveextension") || 
-                                      nombreSeguro.startsWith("content://") || 
-                                      nombreSeguro === "" || 
-                                      itemArchivo.size === 0;
-
-                if (esRutaVirtual) {
-                    abortarTransferencia = true;
+                // ==========================================================
+                // FLUJO VÁLIDO: El archivo es un Excel local real (PC o Móvil)
+                // ==========================================================
+                console.log("SANEM: Archivo local aprobado por el try. Desplegando indicador...");
+                
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        title: "Procesando Archivo",
+                        text: "Analizando la estructura de la negociación, por favor espere...",
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        heightAuto: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
                 }
+                // El HTML con su delay en el onchange procesará el submit() nativo automáticamente
 
-            } catch (excepcionNativa) {
-                // Si el celular bloqueó la lectura de propiedades, el catch ataja la falla de inmediato
-                console.error("SANEM Seguridad: Excepción nativa del sistema operativo detectada.", excepcionNativa);
-                abortarTransferencia = true;
-            }
-
-            // ==========================================================
-            // ACCIÓN DE CONTENCIÓN PERIMETRAL
-            // ==========================================================
-            if (abortarTransferencia) {
-                // FRENAMOS EN SECO EL PROCESO DEL NAVEGADOR
+            } catch (error) {
+                // ==========================================================
+                // INTERCEPCIÓN CONTROLADA: Captura fallas y bloquea Drive móvil
+                // ==========================================================
+                console.error("SANEM Catch: Se interceptó un archivo inválido o error de metadatos.", error);
+                
+                // Bloqueamos en seco el submit del formulario para que no se salga de la página
                 evento.preventDefault();
                 evento.stopPropagation();
                 
-                // Limpiamos el input para que no intente enviar residuos de datos
-                this.value = ""; 
+                // Vaciamos el input para proteger el backend de Flask
+                inputArchivoNeg.value = ""; 
 
-                // Desvinculamos el onchange temporalmente anulando el submit automático del HTML
-                const formularioEnviador = this.closest("form");
-                if (formularioEnviador) {
-                    formularioEnviador.onsubmit = function(e) { e.preventDefault(); return false; };
-                }
-
-                console.warn("SANEM Seguridad: Transferencia virtual de Drive abortada con éxito.");
-
-                // Lanzamos la alerta corporativa limpia de SweetAlert2
+                // Disparamos tu alerta corporativa controlada sin tumbar la sesión
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         icon: "warning",
                         title: "Archivo no válido",
-                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono (carpeta Descargas) e inténtelo nuevamente.",
+                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
                         confirmButtonText: "Aceptar",
                         confirmButtonColor: "#1565C0",
                         allowOutsideClick: false,
                         heightAuto: false
                     });
                 }
-                return false; // Corta por completo el hilo de ejecución secundario
-            }
-
-            // ==========================================================
-            // FLUJO VÁLIDO: El archivo es local y real (PC o Almacenamiento Interno)
-            // ==========================================================
-            console.log("SANEM: Integridad de archivo verificada. Activando procesamiento...");
-            
-            if (typeof Swal !== "undefined") {
-                Swal.fire({
-                    title: "Procesando Archivo",
-                    text: "Analizando la estructura de la negociación, por favor espere...",
-                    allowOutsideClick: false,
-                    showConfirmButton: false,
-                    heightAuto: false,
-                    didOpen: () => { Swal.showLoading(); }
-                });
             }
         });
     }
