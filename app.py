@@ -1,5 +1,20 @@
 ##app
+import os
+import tempfile
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+dir_temporal = os.path.join(BASE_DIR, "tmp_uploads")
+os.makedirs(dir_temporal, exist_ok=True)
+
+os.environ["TMPDIR"] = dir_temporal
+os.environ["TEMP"] = dir_temporal
+os.environ["TMP"] = dir_temporal
+
+tempfile.tempdir = dir_temporal
+
 from flask import Flask, render_template, request, send_file, session, flash, redirect, url_for
+
 import pandas as pd
 import io
 import os
@@ -27,7 +42,6 @@ from services.archivo_service import (
 
 import data_manager
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
 # === CORREGIDO: Apuntar a la nueva base de datos SQLite y no al Excel viejo ===
@@ -39,20 +53,16 @@ cache_negociaciones = {}
 app = Flask(__name__)
 app.secret_key = "TuClaveSuperSecreta"
 
+import tempfile
+
+print("=" * 60)
+print("TEMP:", tempfile.gettempdir())
+print("=" * 60)
+
 inicializar_bd()
 
 # Definir una carpeta temporal dentro de tu propio proyecto
 dir_temporal = os.path.join(os.path.dirname(__file__), 'tmp_uploads')
-
-# Crear la carpeta si no existe
-if not os.path.exists(dir_temporal):
-    os.makedirs(dir_temporal, exist_ok=True)
-
-# Asignar la carpeta temporal a las variables de entorno de Python
-os.environ['TMPDIR'] = dir_temporal
-os.environ['TEMP'] = dir_temporal
-os.environ['TMP'] = dir_temporal
-tempfile.tempdir = dir_temporal
 
 @app.route("/")
 def inicio():
@@ -391,6 +401,10 @@ def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
     )
 
     return datos, coincidencias
+
+@app.route("/test_upload", methods=["POST"])
+def test_upload():
+    return "OK"
 
 @app.route('/negociacion', methods=['GET', 'POST'])
 def negociacion():
