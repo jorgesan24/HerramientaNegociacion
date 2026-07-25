@@ -9,74 +9,87 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 // ==============================================================
-// VALIDACIÓN FILTRADA CON BANDERA DE CONTROL ASÍNCRONA (FIJADO)
+// BLINDAJE PERIMETRAL ABSOLUTO CONTRA GOOGLE DRIVE (RESOLUCIÓN)
 // ==============================================================
 document.addEventListener("DOMContentLoaded", function() {
     const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
 
     if (inputArchivoNeg) {
         inputArchivoNeg.addEventListener("change", function (evento) {
-            // 1. Validación básica de selección
+            // 1. Verificación ciega inicial de la cola de archivos
             if (!this.files || this.files.length === 0) return;
 
-            // BANDERA DE CONTROL MAESTRA: Asumimos inicialmente que el archivo es válido
-            let esArchivoPermitido = true;
+            // Bloqueo total de envíos concurrentes duplicados
+            let abortarTransferencia = false;
 
             try {
-                const archivo = this.files[0];
-                console.log("SANEM: Evaluando metadatos con bandera ->", archivo.name);
+                // Captura del puntero del archivo
+                const listaArchivos = this.files;
+                const itemArchivo = listaArchivos[0];
 
-                // 2. DETECCIÓN ESTÁNDAR DE ARCHIVOS PROBLEMÁTICOS DE DRIVE
-                const esDesdeDrive = archivo.name.includes(".driveextension") ||
-                                     archivo.name.startsWith("content://") ||
-                                     (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
+                console.log("SANEM Seguridad: Evaluando integridad de transferencia...");
 
-                if (esDesdeDrive) {
-                    esArchivoPermitido = false; // Cambiamos la bandera para bloquear todo
-                    throw new Error("GoogleDriveMobileDetected");
+                // VERIFICACIÓN DE INTEGRIDAD 1: Si el archivo no tiene metadatos accesibles
+                if (!itemArchivo || typeof itemArchivo !== 'object') {
+                    abortarTransferencia = true;
                 }
 
-            } catch (error) {
-                esArchivoPermitido = false; // El catch asegura el bloqueo absoluto
-                console.error("SANEM Catch: Intercepción activa por bandera.", error);
+                // VERIFICACIÓN DE INTEGRIDAD 2: Rastreo ciego de URIs virtuales
+                // Si el nombre no existe, es nulo, o incluye cadenas de streams virtuales content://
+                const nombreSeguro = itemArchivo.name ? String(itemArchivo.name) : "";
+                const esRutaVirtual = nombreSeguro.includes(".driveextension") || 
+                                      nombreSeguro.startsWith("content://") || 
+                                      nombreSeguro === "" || 
+                                      itemArchivo.size === 0;
+
+                if (esRutaVirtual) {
+                    abortarTransferencia = true;
+                }
+
+            } catch (excepcionNativa) {
+                // Si el celular bloqueó la lectura de propiedades, el catch ataja la falla de inmediato
+                console.error("SANEM Seguridad: Excepción nativa del sistema operativo detectada.", excepcionNativa);
+                abortarTransferencia = true;
             }
 
             // ==========================================================
-            // EVALUACIÓN DEL SEMÁFORO LÓGICO DE CONTROL
+            // ACCIÓN DE CONTENCIÓN PERIMETRAL
             // ==========================================================
-            if (!esArchivoPermitido) {
-                // 1. FRENAMOS en seco el hilo asíncrono del navegador
+            if (abortarTransferencia) {
+                // FRENAMOS EN SECO EL PROCESO DEL NAVEGADOR
                 evento.preventDefault();
                 evento.stopPropagation();
                 
-                // 2. Rompemos la acción de envío del formulario padre de inmediato
-                const formPadre = this.closest("form");
-                if (formPadre) {
-                    formPadre.onsubmit = function(e) { e.preventDefault(); return false; };
-                }
-
-                // 3. Vaciamos el input y reseteamos el elemento
+                // Limpiamos el input para que no intente enviar residuos de datos
                 this.value = ""; 
 
-                // 4. Lanzamos la alerta controlada de SweetAlert2 sin alterar la página
+                // Desvinculamos el onchange temporalmente anulando el submit automático del HTML
+                const formularioEnviador = this.closest("form");
+                if (formularioEnviador) {
+                    formularioEnviador.onsubmit = function(e) { e.preventDefault(); return false; };
+                }
+
+                console.warn("SANEM Seguridad: Transferencia virtual de Drive abortada con éxito.");
+
+                // Lanzamos la alerta corporativa limpia de SweetAlert2
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         icon: "warning",
                         title: "Archivo no válido",
-                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
+                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono (carpeta Descargas) e inténtelo nuevamente.",
                         confirmButtonText: "Aceptar",
                         confirmButtonColor: "#1565C0",
                         allowOutsideClick: false,
                         heightAuto: false
                     });
                 }
-                return false; // Corta la ejecución de cualquier otra función paralela
+                return false; // Corta por completo el hilo de ejecución secundario
             }
 
             // ==========================================================
-            // FLUJO VÁLIDO: El archivo es local y real (PC o Memoria Interna)
+            // FLUJO VÁLIDO: El archivo es local y real (PC o Almacenamiento Interno)
             // ==========================================================
-            console.log("SANEM: Bandera aprobada. Desplegando indicador de procesamiento...");
+            console.log("SANEM: Integridad de archivo verificada. Activando procesamiento...");
             
             if (typeof Swal !== "undefined") {
                 Swal.fire({
@@ -88,7 +101,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     didOpen: () => { Swal.showLoading(); }
                 });
             }
-            // Aquí el delay controlado del onchange en el HTML ejecutará el submit seguro.
         });
     }
 });
