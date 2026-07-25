@@ -8,77 +8,111 @@ let paginaActual = 1;
 
 const filasPorPagina = 15;
 
-// ==============================================================
-// VALIDACIÓN FILTRADA CON TRY-CATCH PARA DRIVE EN MÓVILES (FIJADO)
-// ==============================================================
-document.addEventListener("DOMContentLoaded", function() {
-    const inputArchivoNeg = document.getElementById("archivoExcelNegociacion");
+//==========================================================
+// SANEM Upload 2.0
+//==========================================================
 
-    if (inputArchivoNeg) {
-        inputArchivoNeg.addEventListener("change", function (evento) {
-            // 1. Validación básica preventiva de selección
-            if (!this.files || this.files.length === 0) return;
+document.addEventListener("DOMContentLoaded", () => {
 
-            try {
-                // Capturamos el archivo de forma directa
-                const archivo = this.files[0];
-                console.log("SANEM: Evaluando metadatos en try...catch ->", archivo.name);
+    const input = document.getElementById("archivoExcelNegociacion");
 
-                // 2. DETECCIÓN ESTÁNDAR DE ARCHIVOS PROBLEMÁTICOS DE DRIVE
-                const esDesdeDrive = archivo.name.includes(".driveextension") ||
-                                     archivo.name.startsWith("content://") ||
-                                     (archivo.size === 0 && (navigator.userAgent.includes("Android") || navigator.userAgent.includes("iPhone")));
+    if (!input) return;
 
-                if (esDesdeDrive) {
-                    // Forzamos el error de forma manual para saltar de inmediato al bloque catch
-                    throw new Error("GoogleDriveMobileDetected");
-                }
+    input.addEventListener("change", async function () {
 
-                // ==========================================================
-                // FLUJO VÁLIDO: El archivo es un Excel local real (PC o Móvil)
-                // ==========================================================
-                console.log("SANEM: Archivo local aprobado por el try. Desplegando indicador...");
-                
-                if (typeof Swal !== "undefined") {
-                    Swal.fire({
-                        title: "Procesando Archivo",
-                        text: "Analizando la estructura de la negociación, por favor espere...",
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        heightAuto: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
-                }
-                // El HTML con su delay en el onchange procesará el submit() nativo automáticamente
+        if (!this.files || this.files.length === 0)
+            return;
 
-            } catch (error) {
-                // ==========================================================
-                // INTERCEPCIÓN CONTROLADA: Captura fallas y bloquea Drive móvil
-                // ==========================================================
-                console.error("SANEM Catch: Se interceptó un archivo inválido o error de metadatos.", error);
-                
-                // Bloqueamos en seco el submit del formulario para que no se salga de la página
-                evento.preventDefault();
-                evento.stopPropagation();
-                
-                // Vaciamos el input para proteger el backend de Flask
-                inputArchivoNeg.value = ""; 
+        const archivo = this.files[0];
 
-                // Disparamos tu alerta corporativa controlada sin tumbar la sesión
-                if (typeof Swal !== "undefined") {
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Archivo no válido",
-                        text: "No es posible procesar archivos directamente desde Google Drive en dispositivos móviles. Por favor, descargue el documento Excel a la memoria interna de su teléfono e inténtelo nuevamente.",
-                        confirmButtonText: "Aceptar",
-                        confirmButtonColor: "#1565C0",
-                        allowOutsideClick: false,
-                        heightAuto: false
-                    });
-                }
+        //--------------------------------------------------
+        // Validación extensión
+        //--------------------------------------------------
+
+        const nombre = archivo.name.toLowerCase();
+
+        if (!(nombre.endsWith(".xlsx") || nombre.endsWith(".xls"))) {
+
+            Mensajes.movil(
+                "Seleccione únicamente archivos Excel (.xlsx o .xls)."
+            );
+
+            this.value = "";
+
+            return;
+        }
+
+        //--------------------------------------------------
+        // Validación tamaño
+        //--------------------------------------------------
+
+        if (archivo.size <= 0) {
+
+            Mensajes.movil(
+                "El archivo está vacío o no pudo obtenerse correctamente."
+            );
+
+            this.value = "";
+
+            return;
+        }
+
+        //--------------------------------------------------
+        // Validación lectura real del archivo
+        //--------------------------------------------------
+
+        try{
+
+            await archivo.arrayBuffer();
+
+        }catch(error){
+
+            console.error(error);
+
+            Mensajes.movil(
+                "No fue posible acceder al archivo seleccionado.\n\nSi fue abierto desde Google Drive o OneDrive, descárguelo primero en la memoria del dispositivo."
+            );
+
+            this.value="";
+
+            return;
+
+        }
+
+        //--------------------------------------------------
+        // Loader
+        //--------------------------------------------------
+
+        Swal.fire({
+
+            title:"Procesando archivo",
+
+            text:"Analizando la negociación...",
+
+            allowOutsideClick:false,
+
+            allowEscapeKey:false,
+
+            showConfirmButton:false,
+
+            heightAuto:false,
+
+            didOpen:()=>{
+
+                Swal.showLoading();
+
             }
+
         });
-    }
+
+        //--------------------------------------------------
+        // Enviar formulario
+        //--------------------------------------------------
+
+        this.form.submit();
+
+    });
+
 });
 
 $(function () {
