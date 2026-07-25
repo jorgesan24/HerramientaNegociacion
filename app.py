@@ -114,6 +114,12 @@ def referencia():
     acto_administrativo = "NA"
     valor_normativo = "NA"
 
+    print("=" * 60)
+    print("METHOD:", request.method)
+    print("CONTENT-TYPE:", request.content_type)
+    print("CONTENT-LENGTH:", request.content_length)
+    print("=" * 60)
+
     if request.method == "POST":
 
         tipo_filtro = request.form.get(
@@ -406,6 +412,45 @@ def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
 def test_upload():
     return "OK"
 
+@app.route("/test_upload", methods=["GET"])
+def test_upload_form():
+
+    return """
+    <!DOCTYPE html>
+    <html>
+    <body>
+
+    <h2>Prueba de carga</h2>
+
+    <form action="/test_upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="archivo">
+        <button type="submit">Enviar</button>
+    </form>
+
+    </body>
+    </html>
+    """
+
+@app.route("/test_upload", methods=["POST"])
+def test_upload():
+
+    try:
+
+        archivo = request.files.get("archivo")
+
+        if archivo is None:
+            return "No llegó archivo"
+
+        return f"Archivo recibido: {archivo.filename}"
+
+    except Exception as e:
+
+        import traceback
+
+        traceback.print_exc()
+
+        return str(e), 500
+
 @app.route('/negociacion', methods=['GET', 'POST'])
 def negociacion():
     hojas = []
@@ -447,28 +492,34 @@ def negociacion():
             # ==============================
             # CASO 1: CARGA DEL ARCHIVO
             # ==============================
-            if "archivo" in request.files:
-                archivo = request.files["archivo"]
 
-                if archivo.filename != "":
-                    # Validación para archivos vacíos / nubes móviles
-                    archivo.seek(0, os.SEEK_END)
-                    tamano_archivo = archivo.tell()
-                    archivo.seek(0) # Resetear puntero
+            content_type = request.content_type or ""
 
-                    if tamano_archivo == 0:
-                        mensaje = "❌ El archivo está vacío o es un acceso directo virtual de la nube. Por favor, descárgalo físicamente en la memoria de tu celular."
-                        return render_template(
-                            "negociacion/negociacion.html",
-                            hojas=hojas, datos=datos, mensaje=mensaje, validaciones=validaciones,
-                            archivo_valido=archivo_valido, total_registros=total_registros,
-                            ruta=ruta, hoja_seleccionada=hoja_seleccionada, nombre_archivo=nombre_archivo,
-                            kpis=kpis, columnas=columnas, tabla=tabla, filtros_kpi=FILTROS_KPI
-                        )
+            if content_type.startswith("multipart/form-data"):
 
-                    ruta = guardar_archivo(archivo, UPLOAD_FOLDER)
-                    hojas = obtener_hojas_excel(ruta)
-                    nombre_archivo = obtener_nombre_archivo(ruta)
+                archivo = request.files.get("archivo")
+
+                if archivo and archivo.filename:
+
+                    if archivo.filename != "":
+                        # Validación para archivos vacíos / nubes móviles
+                        archivo.seek(0, os.SEEK_END)
+                        tamano_archivo = archivo.tell()
+                        archivo.seek(0) # Resetear puntero
+
+                        if tamano_archivo == 0:
+                            mensaje = "❌ El archivo está vacío o es un acceso directo virtual de la nube. Por favor, descárgalo físicamente en la memoria de tu celular."
+                            return render_template(
+                                "negociacion/negociacion.html",
+                                hojas=hojas, datos=datos, mensaje=mensaje, validaciones=validaciones,
+                                archivo_valido=archivo_valido, total_registros=total_registros,
+                                ruta=ruta, hoja_seleccionada=hoja_seleccionada, nombre_archivo=nombre_archivo,
+                                kpis=kpis, columnas=columnas, tabla=tabla, filtros_kpi=FILTROS_KPI
+                            )
+
+                        ruta = guardar_archivo(archivo, UPLOAD_FOLDER)
+                        hojas = obtener_hojas_excel(ruta)
+                        nombre_archivo = obtener_nombre_archivo(ruta)
 
             # ==============================
             # CASO 2: CARGAR HOJA SELECCIONADA
