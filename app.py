@@ -392,7 +392,8 @@ def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
 
     return datos, coincidencias
 
-@app.route('/negociacion', methods=['POST'])
+# CAMBIO REQUERIDO: Incluir "GET" en la lista de métodos
+@app.route('/negociacion', methods=['GET', 'POST'])
 def negociacion():
     try:
         if "archivo" in request.files:
@@ -964,6 +965,7 @@ def negociacion():
             "DESVIACION"
         ]
 
+    # Al final de la función negociacion(), se retorna el template normalmente:
     return render_template(
         "negociacion/negociacion.html",
         hojas=hojas,
@@ -980,7 +982,7 @@ def negociacion():
         columnas=columnas,
         tabla=tabla,
         filtros_kpi=FILTROS_KPI,
-        tiempo_proceso = tiempo_proceso,
+        tiempo_proceso=tiempo_proceso,
         datos_exportacion=datos_exportacion
     )
 
