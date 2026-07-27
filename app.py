@@ -114,12 +114,6 @@ def referencia():
     acto_administrativo = "NA"
     valor_normativo = "NA"
 
-    print("=" * 60)
-    print("METHOD:", request.method)
-    print("CONTENT-TYPE:", request.content_type)
-    print("CONTENT-LENGTH:", request.content_length)
-    print("=" * 60)
-
     if request.method == "POST":
 
         tipo_filtro = request.form.get(
@@ -487,6 +481,13 @@ def negociacion():
         }
     }
 
+    print("=" * 70, flush=True)
+    print("ENTRO A NEGOCIACION", flush=True)
+    print("METHOD:", request.method, flush=True)
+    print("CONTENT TYPE:", request.content_type, flush=True)
+    print("CONTENT LENGTH:", request.content_length, flush=True)
+    print("=" * 70, flush=True)
+
     if request.method == "POST":
         try:
             # ==============================
@@ -498,6 +499,8 @@ def negociacion():
             if content_type.startswith("multipart/form-data"):
 
                 archivo = request.files.get("archivo")
+
+                print("DESPUÉS DE REQUEST.FILES", flush=True)
 
                 if archivo and archivo.filename:
 
