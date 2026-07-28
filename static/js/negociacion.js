@@ -9,7 +9,7 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 //==========================================================
-// SANEM Upload 2.0 (Versión Blindada para Google Drive Móvil)
+// SANEM Upload 2.0 (Versión Definitiva con Clonación de Blob)
 //==========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,56 +18,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!input) return;
 
-    input.addEventListener("change", function () { // <- Nota: Quitamos el 'async' aquí
+    input.addEventListener("change", function () {
 
         if (!this.files || this.files.length === 0)
             return;
 
-        const archivo = this.files[0];
+        const archivoOriginal = this.files[0];
 
         //--------------------------------------------------
         // Validación extensión
         //--------------------------------------------------
-        const nombre = archivo.name.toLowerCase();
+        const nombre = archivoOriginal.name.toLowerCase();
 
         if (!(nombre.endsWith(".xlsx") || nombre.endsWith(".xls"))) {
-            Mensajes.movil(
-                "Seleccione únicamente archivos Excel (.xlsx o .xls)."
-            );
+            Mensajes.movil("Seleccione únicamente archivos Excel (.xlsx o .xls).");
             this.value = "";
             return;
         }
 
         //--------------------------------------------------
-        // Validación tamaño básico del sistema operativo
+        // CLONACIÓN ESTRATÉGICA (Evita ERR_UPLOAD_FILE_CHANGED)
         //--------------------------------------------------
-        if (archivo.size <= 0) {
-            Mensajes.movil(
-                "El archivo está vacío o no pudo obtenerse correctamente desde la nube."
-            );
-            this.value = "";
-            return;
-        }
-
-        //--------------------------------------------------
-        // NUEVA LÓGICA: Validación de lectura física real con FileReader
-        //--------------------------------------------------
+        // Creamos un lector nativo para extraer la información cruda
         const lector = new FileReader();
 
         lector.onload = (e) => {
-            const bytes = e.target.result;
-            
-            // Si el archivo de Drive viene sin datos físicos, disparamos el error controlado
-            if (!bytes || bytes.byteLength === 0) {
+            const arrayBuffer = e.target.result;
+
+            if (!arrayBuffer || arrayBuffer.byteLength === 0) {
                 Mensajes.movil(
-                    "No fue posible acceder al archivo seleccionado de Google Drive.\n\nPor favor, descárgalo físicamente en la memoria interna de tu celular (carpeta Descargas) antes de cargarlo en la aplicación.",
+                    "No fue posible acceder al archivo seleccionado de Google Drive.\n\nPor favor, descárgalo físicamente en la memoria interna de tu celular antes de cargarlo.",
                     "Archivo no válido"
                 );
-                this.value = "";
+                input.value = "";
                 return;
             }
 
-            // Si los bytes son correctos y el archivo es real, abrimos el Loader
+            // --- TRUCO DE BLINDAJE ---
+            // Creamos un Blob nuevo con los datos binarios y el tipo de Excel exacto.
+            // Al ser un objeto local e independiente de la RAM del navegador,
+            // Google Drive pierde el control y Chrome no puede bloquear la subida.
+            const archivoClonado = new Blob([arrayBuffer], { type: archivoOriginal.type });
+
+            // Levantamos el loader estético
             Swal.fire({
                 title: "Procesando archivo",
                 text: "Analizando la negociación...",
@@ -80,26 +73,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            // Enviamos el formulario con una pausa de 150ms nativa para estabilizar el archivo en móviles
-            setTimeout(() => {
-                this.form.submit();
-            }, 150);
+            // Reconstruimos el envío usando un objeto FormData asíncrono
+            const formData = new FormData();
+            formData.append("archivo", archivoClonado, archivoOriginal.name);
+
+            // Enviamos el archivo clonado de forma directa hacia tu backend
+            fetch(input.form.action || window.location.href, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                // Una vez que el POST procesa con éxito, forzamos la redirección limpia al GET
+                window.location.href = "/negociacion";
+            })
+            .catch(error => {
+                console.error("Error en transferencia:", error);
+                window.location.href = "/negociacion?mensaje=Error de red al transferir el archivo.";
+            });
         };
 
         lector.onerror = () => {
             Mensajes.movil(
-                "No fue posible acceder al archivo seleccionado de Google Drive.\n\nPor favor, descárgalo físicamente en la memoria interna de tu celular (carpeta Descargas) antes de cargarlo en la aplicación.",
+                "Error al leer el documento de la nube.\n\nPor favor, descárgalo físicamente en tu celular.",
                 "Archivo no válido"
             );
-            this.value = "";
+            input.value = "";
         };
 
-        // Disparamos la lectura segura en segundo plano sin alterar los metadatos del input file
-        lector.readAsArrayBuffer(archivo);
-
+        // Iniciamos la extracción de datos
+        lector.readAsArrayBuffer(archivoOriginal);
     });
-
 });
+
 
 $(function () {
 
