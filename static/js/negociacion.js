@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!input) return;
 
-    input.addEventListener("change", async function () {
+    input.addEventListener("change", function () { // <- Nota: Quitamos el 'async' aquí
 
         if (!this.files || this.files.length === 0)
             return;
@@ -50,49 +50,52 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         //--------------------------------------------------
-        // Validación de lectura física real (Google Drive / OneDrive)
+        // NUEVA LÓGICA: Validación de lectura física real con FileReader
         //--------------------------------------------------
-        try {
-            // Obligamos al navegador del celular a intentar extraer los bytes del archivo
-            const buffer = await archivo.arrayBuffer();
+        const lector = new FileReader();
+
+        lector.onload = (e) => {
+            const bytes = e.target.result;
             
-            // Si el buffer es 0, es un acceso directo virtual de Drive sin datos locales
-            if (buffer.byteLength === 0) {
-                throw new Error("El archivo virtual no contiene bytes físicos disponibles.");
+            // Si el archivo de Drive viene sin datos físicos, disparamos el error controlado
+            if (!bytes || bytes.byteLength === 0) {
+                Mensajes.movil(
+                    "No fue posible acceder al archivo seleccionado de Google Drive.\n\nPor favor, descárgalo físicamente en la memoria interna de tu celular (carpeta Descargas) antes de cargarlo en la aplicación.",
+                    "Archivo no válido"
+                );
+                this.value = "";
+                return;
             }
 
-        } catch (error) {
-            console.error("SANEM Móvil Error ->", error);
+            // Si los bytes son correctos y el archivo es real, abrimos el Loader
+            Swal.fire({
+                title: "Procesando archivo",
+                text: "Analizando la negociación...",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                heightAuto: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
-            // Levantamos el SweetAlert con el botón azul corporativo antes de cancelar todo
+            // Enviamos el formulario con una pausa de 150ms nativa para estabilizar el archivo en móviles
+            setTimeout(() => {
+                this.form.submit();
+            }, 150);
+        };
+
+        lector.onerror = () => {
             Mensajes.movil(
                 "No fue posible acceder al archivo seleccionado de Google Drive.\n\nPor favor, descárgalo físicamente en la memoria interna de tu celular (carpeta Descargas) antes de cargarlo en la aplicación.",
                 "Archivo no válido"
             );
+            this.value = "";
+        };
 
-            this.value = ""; // Limpiamos el input para permitir un nuevo intento
-            return;          // CANCELA EL ENVÍO (Evita que el navegador mande la petición y se cierre la app)
-        }
-
-        //--------------------------------------------------
-        // Loader (Solo se ejecuta si el archivo es 100% legible en el celular)
-        //--------------------------------------------------
-        Swal.fire({
-            title: "Procesando archivo",
-            text: "Analizando la negociación...",
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            showConfirmButton: false,
-            heightAuto: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        //--------------------------------------------------
-        // Enviar formulario de forma segura
-        //--------------------------------------------------
-        this.form.submit();
+        // Disparamos la lectura segura en segundo plano sin alterar los metadatos del input file
+        lector.readAsArrayBuffer(archivo);
 
     });
 
