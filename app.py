@@ -402,10 +402,6 @@ def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
 
     return datos, coincidencias
 
-@app.route("/test_upload", methods=["POST"])
-def test_upload():
-    return "OK"
-
 @app.route("/test_upload", methods=["GET"])
 def test_upload_form():
 
