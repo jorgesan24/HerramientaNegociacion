@@ -9,7 +9,7 @@ let paginaActual = 1;
 const filasPorPagina = 15;
 
 //==========================================================
-// SANEM Upload 2.0
+// SANEM Upload 2.0 (Versión Blindada para Google Drive Móvil)
 //==========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,87 +28,70 @@ document.addEventListener("DOMContentLoaded", () => {
         //--------------------------------------------------
         // Validación extensión
         //--------------------------------------------------
-
         const nombre = archivo.name.toLowerCase();
 
         if (!(nombre.endsWith(".xlsx") || nombre.endsWith(".xls"))) {
-
             Mensajes.movil(
                 "Seleccione únicamente archivos Excel (.xlsx o .xls)."
             );
-
             this.value = "";
-
             return;
         }
 
         //--------------------------------------------------
-        // Validación tamaño
+        // Validación tamaño básico del sistema operativo
         //--------------------------------------------------
-
         if (archivo.size <= 0) {
-
             Mensajes.movil(
-                "El archivo está vacío o no pudo obtenerse correctamente."
+                "El archivo está vacío o no pudo obtenerse correctamente desde la nube."
             );
-
             this.value = "";
-
             return;
         }
 
         //--------------------------------------------------
-        // Validación lectura real del archivo
+        // Validación de lectura física real (Google Drive / OneDrive)
         //--------------------------------------------------
-
-        try{
-
-            await archivo.arrayBuffer();
-
-        }catch(error){
-
-            console.error(error);
-
-            Mensajes.movil(
-                "No fue posible acceder al archivo seleccionado.\n\nSi fue abierto desde Google Drive o OneDrive, descárguelo primero en la memoria del dispositivo."
-            );
-
-            this.value="";
-
-            return;
-
-        }
-
-        //--------------------------------------------------
-        // Loader
-        //--------------------------------------------------
-
-        Swal.fire({
-
-            title:"Procesando archivo",
-
-            text:"Analizando la negociación...",
-
-            allowOutsideClick:false,
-
-            allowEscapeKey:false,
-
-            showConfirmButton:false,
-
-            heightAuto:false,
-
-            didOpen:()=>{
-
-                Swal.showLoading();
-
+        try {
+            // Obligamos al navegador del celular a intentar extraer los bytes del archivo
+            const buffer = await archivo.arrayBuffer();
+            
+            // Si el buffer es 0, es un acceso directo virtual de Drive sin datos locales
+            if (buffer.byteLength === 0) {
+                throw new Error("El archivo virtual no contiene bytes físicos disponibles.");
             }
 
+        } catch (error) {
+            console.error("SANEM Móvil Error ->", error);
+
+            // Levantamos el SweetAlert con el botón azul corporativo antes de cancelar todo
+            Mensajes.movil(
+                "No fue posible acceder al archivo seleccionado de Google Drive.\n\nPor favor, descárgalo físicamente en la memoria interna de tu celular (carpeta Descargas) antes de cargarlo en la aplicación.",
+                "Archivo no válido"
+            );
+
+            this.value = ""; // Limpiamos el input para permitir un nuevo intento
+            return;          // CANCELA EL ENVÍO (Evita que el navegador mande la petición y se cierre la app)
+        }
+
+        //--------------------------------------------------
+        // Loader (Solo se ejecuta si el archivo es 100% legible en el celular)
+        //--------------------------------------------------
+        Swal.fire({
+            title: "Procesando archivo",
+            text: "Analizando la negociación...",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            heightAuto: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
         });
 
         //--------------------------------------------------
-        // Enviar formulario
+        // Enviar formulario de forma segura
         //--------------------------------------------------
-
         this.form.submit();
 
     });

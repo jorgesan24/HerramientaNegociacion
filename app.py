@@ -559,22 +559,22 @@ def negociacion_post():
     content_type = request.content_type or ""
     
     # --------------------------------------------------------------------------
-    # CASO 1: CARGA INICIAL DEL ARCHIVO EXCEL
+    # CASO 1: CARGA INICIAL DEL ARCHIVO EXCEL (BLINDADO PARA MÓVILES)
     # --------------------------------------------------------------------------
     if content_type.startswith("multipart/form-data") and "archivo" in request.files:
-        archivo = request.files.get("archivo")
-        
-        if archivo and archivo.filename != "":
-            # Validación física para detectar accesos directos de nubes o archivos vacíos
-            archivo.seek(0, os.SEEK_END)
-            tamano_archivo = archivo.tell()
-            archivo.seek(0)
+        try:
+            archivo = request.files.get("archivo")
+            
+            if archivo and archivo.filename != "":
+                # Validación física para detectar accesos directos de nubes o archivos vacíos
+                archivo.seek(0, os.SEEK_END)
+                tamano_archivo = archivo.tell()
+                archivo.seek(0)
 
-            if tamano_archivo == 0:
-                msg = "❌ El archivo está vacío o es un acceso directo virtual de la nube. Por favor, descárgalo físicamente."
-                return redirect(url_for('negociacion_get', mensaje=msg))
+                if tamano_archivo == 0:
+                    msg = "❌ El archivo está vacío o es un acceso directo virtual de la nube. Por favor, descárgalo físicamente en tu celular."
+                    return redirect(url_for('negociacion', mensaje=msg))
 
-            try:
                 ruta = guardar_archivo(archivo, UPLOAD_FOLDER)
                 hojas = obtener_hojas_excel(ruta)
                 nombre_archivo = obtener_nombre_archivo(ruta)
@@ -589,13 +589,15 @@ def negociacion_post():
                 session["id_proceso"] = ""
                 session["kpis"] = None
                 session["tiempo_proceso"] = None
-                
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return redirect(url_for('negociacion_get', mensaje="Error físico guardando el documento de Excel."))
 
-        return redirect(url_for('negociacion'))
+            return redirect(url_for('negociacion'))
+
+        except Exception as e:
+            # Captura si el sistema operativo del celular corta la transferencia a mitad de camino
+            import traceback
+            traceback.print_exc()
+            msg_error = "❌ Error de sincronización: El archivo de Google Drive no está disponible localmente en el celular."
+            return redirect(url_for('negociacion', mensaje=msg_error))
 
     # --------------------------------------------------------------------------
     # CASO 2: PROCESAMIENTO DE LA HOJA SELECCIONADA (LÓGICA PANDAS)
@@ -606,7 +608,7 @@ def negociacion_post():
         hoja = request.form.get("hoja")
         
         if not ruta or not os.path.exists(ruta):
-            return redirect(url_for('negociacion_get', mensaje="❌ La ruta del archivo expiró o no se encuentra en el servidor."))
+            return redirect(url_for('negociacion', mensaje="❌ La ruta del archivo expiró o no se encuentra en el servidor."))
 
         # Re-obtener datos estructurales del archivo
         hojas = obtener_hojas_excel(ruta)
@@ -620,15 +622,15 @@ def negociacion_post():
             
             if datos is None:
                 session["validaciones_flash"] = ["❌ No se encontraron encabezados válidos."]
-                return redirect(url_for('negociacion_get'))
+                return redirect(url_for('negociacion'))
             
             if datos.empty:
                 session["validaciones_flash"] = ["❌ La hoja no contiene registros."]
-                return redirect(url_for('negociacion_get'))
+                return redirect(url_for('negociacion'))
                 
             if datos.shape[1] < 3:
                 session["validaciones_flash"] = ["❌ La hoja debe tener mínimo 3 columnas."]
-                return redirect(url_for('negociacion_get'))
+                return redirect(url_for('negociacion'))
 
             # Limpieza estándar de columnas del DataFrame
             datos.columns = [str(col).strip().upper() for col in datos.columns]
@@ -636,7 +638,7 @@ def negociacion_post():
             datos = datos.loc[:, ~datos.columns.astype(str).str.contains("^Unnamed", case=False, na=False)]
             columnas = list(datos.columns)
 
-            # Forzar mapeo de las 3 columnas obligatorias
+            # Forzar mapeo de las 3 columnas obligatorias por su posición exacta
             datos.rename(
                 columns={
                     columnas[0]: "CODIGO",
@@ -650,7 +652,7 @@ def negociacion_post():
             valor_num = pd.to_numeric(datos["VALOR OFERTADO"], errors="coerce")
             if valor_num.notna().mean() < 0.80:
                 session["validaciones_flash"] = ["❌ La tercera columna no contiene un porcentaje suficiente de valores numéricos válidos."]
-                return redirect(url_for('negociacion_get'))
+                return redirect(url_for('negociacion'))
 
             # Sanitización de filas vacías
             datos.dropna(how="all", inplace=True)
@@ -761,6 +763,7 @@ def negociacion_post():
         return redirect(url_for('negociacion'))
 
     return redirect(url_for('negociacion'))
+
 
 def construir_valor_objetivo(datos):
 
