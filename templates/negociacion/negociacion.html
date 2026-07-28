@@ -39,24 +39,17 @@ Negociacion
     const estadoPanel = "{{ estado_panel }}";
 </script>
 
+{# Reemplazamos el Swal genérico por tu función nativa de SANEM #}
 {% if mensaje %}
-
 <script>
-
-Swal.fire({
-
-    icon: "error",
-
-    title: "Archivo incompatible",
-
-    text: "{{ mensaje }}",
-
-    confirmButtonText: "Aceptar"
-
-});
-
+    document.addEventListener("DOMContentLoaded", () => {
+        const errorMsg = "{{ mensaje | safe }}";
+        if (errorMsg) {
+            // Llama a tu objeto personalizado con la configuración para celulares
+            Mensajes.movil(errorMsg, "Archivo no válido");
+        }
+    });
 </script>
-
 {% endif %}
 
 {% endblock %}

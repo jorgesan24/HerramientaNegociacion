@@ -33,12 +33,9 @@ from flask import send_from_directory
 from negociaciones_repository import inicializar_bd
 from repository_manager import guardar_negociacion
 import tempfile
+from pathlib import Path
+from archivo_service import guardar_archivo, obtener_hojas_excel, obtener_nombre_archivo
 
-from services.archivo_service import (
-    guardar_archivo,
-    obtener_hojas_excel,
-    obtener_nombre_archivo
-)
 
 import data_manager
 
@@ -54,10 +51,6 @@ app = Flask(__name__)
 app.secret_key = "TuClaveSuperSecreta"
 
 import tempfile
-
-print("=" * 60)
-print("TEMP:", tempfile.gettempdir())
-print("=" * 60)
 
 inicializar_bd()
 
@@ -402,276 +395,127 @@ def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
 
     return datos, coincidencias
 
-@app.route("/test_upload", methods=["GET"])
-def test_upload_form():
+def cargar_archivo_negociacion():
 
-    return """
-    <!DOCTYPE html>
-    <html>
-    <body>
+    archivo = request.files.get("archivo")
 
-    <h2>Prueba de carga</h2>
-
-    <form action="/test_upload" method="POST" enctype="multipart/form-data">
-        <input type="file" name="archivo">
-        <button type="submit">Enviar</button>
-    </form>
-
-    </body>
-    </html>
-    """
-
-@app.route("/test_upload", methods=["POST"])
-def test_upload():
+    if archivo is None or archivo.filename == "":
+        return {
+            "ok": False,
+            "mensaje": "No se seleccionó ningún archivo."
+        }
 
     try:
 
-        archivo = request.files.get("archivo")
+        print(guardar_archivo)
+        print(guardar_archivo.__module__)
+        print(guardar_archivo.__code__.co_filename)
 
-        if archivo is None:
-            return "No llegó archivo"
+        ruta = guardar_archivo(
+            archivo,
+            Path(dir_temporal)
+        )
 
-        return f"Archivo recibido: {archivo.filename}"
+        hojas = obtener_hojas_excel(ruta)
+
+        session["ruta_archivo"] = ruta
+        session["archivo_nombre"] = archivo.filename
+        session["hojas_excel"] = hojas
+
+        return {
+            "ok": True,
+            "hojas": hojas,
+            "archivo": archivo.filename
+        }
 
     except Exception as e:
 
-        import traceback
+        app.logger.exception(e)
 
-        traceback.print_exc()
+        return {
+            "ok": False,
+            "mensaje": str(e)
+        }
 
-        return str(e), 500
+# ==============================================================================
+# VARIABLE GLOBAL O DE CONFIGURACIÓN DE KPIS
+# ==============================================================================
+FILTROS_KPI = {
+    "aceptables": {"columna": "VALIDACION", "valores": ["ACEPTAR"]},
+    "renegociar": {"columna": "VALIDACION", "valores": ["RENEGOCIAR"]},
+    "duplicados": {"columna": "DUPLICADO", "valores": ["DUPLICADO"]},
+    "activos": {
+        "columna": "ESTADO REGISTRO",
+        "valores": ["VIGENTE", "EN TRAMITE RENOV", "DROGA BLANCA", "PAÑALES", "APME", "MVND"]
+    },
+    "no_activos": {
+        "columna": "ESTADO REGISTRO",
+        "valores": [
+            "VENCIDO", "NEGADO", "TEMP. NO COMERC - VIGENTE", "ABANDONO", 
+            "TEMP. NO COMERCIALIZADO - EN TRÁMITE RENOV", "NO EXISTE", "REVOCADO", 
+            "COMERCIALIZADO SOLO POR EXPORTACION", "SUSPENDIDO", "NO APLICA REGISTRO",
+            "INACTIVO", "MUESTRA MEDICA", "DESISTIDO", "CANCELADO", "PERDIDA FUERZA EJEC"
+        ]
+    }
+}
 
-@app.route('/negociacion', methods=['GET', 'POST'])
-def negociacion():
-    hojas = []
+@app.route('/negociacion', methods=['GET'], endpoint='negociacion')
+def negociacion_get():
+    # ==========================================================================
+    # CORRECCIÓN DE ORIGEN: SEGURA PARA COMPONENTES INTERNOS
+    # ==========================================================================
+    origen = request.referrer or ""
+    
+    # Solo limpiamos si el usuario viene de la raíz exacta del sistema o del index,
+    # asegurando que si navega en /referencia, la memoria de negociación no se altere.
+    if origen and (origen.endswith('/') or 'index' in origen):
+        claves_a_borrar = [
+            "hojas_excel", "ruta_archivo", "archivo_nombre", 
+            "hoja_seleccionada", "id_proceso", "kpis", "tiempo_proceso"
+        ]
+        for clave in claves_a_borrar:
+            session.pop(clave, None)
+
+    # 1. Recuperar persistencia normal desde la sesión
+    hojas = session.get("hojas_excel", [])
+    ruta = session.get("ruta_archivo", "")
+    nombre_archivo = session.get("archivo_nombre", "")
+    hoja_seleccionada = session.get("hoja_seleccionada", "")
+    id_proceso = session.get("id_proceso", "")
+    tiempo_proceso = session.get("tiempo_proceso", None)
+    kpis = session.get("kpis", None)
+
+    # Variables por defecto para el renderizado
     datos = None
-    mensaje = ""
-    validaciones = []
-    archivo_valido = False
-    total_registros = 0
-    ruta = ""
-    hoja_seleccionada = ""
-    tiempo_proceso = None
-    nombre_archivo = ""
-    id_cache = "" 
-    kpis = None
     tabla = None
     columnas = []
+    total_registros = 0
+    archivo_valido = False
+    validaciones = session.pop("validaciones_flash", [])
+    mensaje = request.args.get("mensaje", "")
 
-    FILTROS_KPI = {
-        "aceptables": {"columna": "VALIDACION", "valores": ["ACEPTAR"]},
-        "renegociar": {"columna": "VALIDACION", "valores": ["RENEGOCIAR"]},
-        "duplicados": {"columna": "DUPLICADO", "valores": ["DUPLICADO"]},
-        "activos": {
-            "columna": "ESTADO REGISTRO",
-            "valores": ["VIGENTE", "EN TRAMITE RENOV", "DROGA BLANCA", "PAÑALES", "APME", "MVND"]
-        },
-        "no_activos": {
-            "columna": "ESTADO REGISTRO",
-            "valores": [
-                "VENCIDO", "NEGADO", "TEMP. NO COMERC - VIGENTE", "ABANDONO", 
-                "TEMP. NO COMERCIALIZADO - EN TRÁMITE RENOV", "NO EXISTE", "REVOCADO", 
-                "COMERCIALIZADO SOLO POR EXPORTACION", "SUSPENDIDO", "NO APLICA REGISTRO",
-                "INACTIVO", "MUESTRA MEDICA", "DESISTIDO", "CANCELADO", "PERDIDA FUERZA EJEC"
-            ]
-        }
-    }
+    # 2. Si existe el proceso, recuperar de caché
+    if id_proceso and id_proceso in cache_negociaciones:
+        info_cache = cache_negociaciones[id_proceso]
+        datos = info_cache.get("datos")
+        ruta = info_cache.get("ruta", ruta)
+        hoja_seleccionada = info_cache.get("hoja", hoja_seleccionada)
+        
+        if datos is not None:
+            columnas = datos.columns.tolist()
+            tabla = datos.to_dict(orient="records")
+            total_registros = len(datos)
+            archivo_valido = True
 
-    print("=" * 70, flush=True)
-    print("ENTRO A NEGOCIACION", flush=True)
-    print("METHOD:", request.method, flush=True)
-    print("CONTENT TYPE:", request.content_type, flush=True)
-    print("CONTENT LENGTH:", request.content_length, flush=True)
-    print("=" * 70, flush=True)
+    # 3. Columnas visuales base si no hay datos procesados aún
+    if not columnas:
+        columnas = [
+            "CODIGO", "DESCRIPCION", "VALOR OFERTADO", "REGULACION",
+            "NT", "REFERENCIA", "PM", "VALOR OBJETIVO", "VALIDACION",
+            "ESTADO REGISTRO", "DUPLICADO", "ORIGEN", "DESVIACION"
+        ]
 
-    if request.method == "POST":
-        try:
-            # ==============================
-            # CASO 1: CARGA DEL ARCHIVO
-            # ==============================
-
-            content_type = request.content_type or ""
-
-            if content_type.startswith("multipart/form-data"):
-
-                archivo = request.files.get("archivo")
-
-                print("DESPUÉS DE REQUEST.FILES", flush=True)
-
-                if archivo and archivo.filename:
-
-                    if archivo.filename != "":
-                        # Validación para archivos vacíos / nubes móviles
-                        archivo.seek(0, os.SEEK_END)
-                        tamano_archivo = archivo.tell()
-                        archivo.seek(0) # Resetear puntero
-
-                        if tamano_archivo == 0:
-                            mensaje = "❌ El archivo está vacío o es un acceso directo virtual de la nube. Por favor, descárgalo físicamente en la memoria de tu celular."
-                            return render_template(
-                                "negociacion/negociacion.html",
-                                hojas=hojas, datos=datos, mensaje=mensaje, validaciones=validaciones,
-                                archivo_valido=archivo_valido, total_registros=total_registros,
-                                ruta=ruta, hoja_seleccionada=hoja_seleccionada, nombre_archivo=nombre_archivo,
-                                kpis=kpis, columnas=columnas, tabla=tabla, filtros_kpi=FILTROS_KPI
-                            )
-
-                        ruta = guardar_archivo(archivo, UPLOAD_FOLDER)
-                        hojas = obtener_hojas_excel(ruta)
-                        nombre_archivo = obtener_nombre_archivo(ruta)
-
-            # ==============================
-            # CASO 2: CARGAR HOJA SELECCIONADA
-            # ==============================
-            if "hoja" in request.form:
-                inicio = time.perf_counter()
-
-                ruta = request.form.get("archivo")
-                hoja = request.form.get("hoja")
-
-                hojas = obtener_hojas_excel(ruta)
-                nombre_archivo = obtener_nombre_archivo(ruta)
-                hoja_seleccionada = hoja
-
-                datos, fila_encabezado = encontrar_encabezado(ruta, hoja)
-
-                if datos is not None:
-                    datos.columns = [str(col).strip().upper() for col in datos.columns]
-                    datos = datos.dropna(axis=1, how="all")
-                    datos = datos.loc[:, ~datos.columns.astype(str).str.contains("^Unnamed", case=False, na=False)]
-                    columnas = list(datos.columns)
-
-                    if len(columnas) >= 3:
-                        datos.rename(
-                            columns={
-                                columnas[0]: "CODIGO",
-                                columnas[1]: "DESCRIPCION",
-                                columnas[2]: "VALOR OFERTADO"
-                            },
-                            inplace=True
-                        )
-
-                        valor = pd.to_numeric(datos["VALOR OFERTADO"], errors="coerce")
-                        if valor.notna().mean() < 0.80:
-                            validaciones.append("❌ La tercera columna no parece contener el Valor Ofertado.")
-                            archivo_valido = False
-
-                        datos = datos.dropna(how="all")
-                        for col in ["CODIGO", "DESCRIPCION"]:
-                            datos[col] = datos[col].fillna("").astype(str).str.strip()
-
-                        datos = datos[~((datos["CODIGO"] == "") & (datos["DESCRIPCION"] == ""))]
-                        datos.reset_index(drop=True, inplace=True)
-
-                    tabla = datos.to_dict(orient="records")
-
-                validaciones = []
-
-                if datos is None:
-                    validaciones.append("❌ No se encontraron encabezados válidos.")
-                    archivo_valido = False
-                elif datos.empty:
-                    validaciones.append("❌ La hoja no contiene registros.")
-                    archivo_valido = False
-                elif datos.shape[1] < 3:
-                    validaciones.append("❌ La hoja debe tener mínimo 3 columnas.")
-                    archivo_valido = False
-                else:
-                    validaciones.append(f"✔ Encabezados encontrados en fila: {fila_encabezado}")
-                    validaciones.append(f"✔ Registros encontrados: {len(datos):,}")
-                    validaciones.append(f"✔ Columnas encontradas: {datos.shape[1]}")
-                    archivo_valido = True
-                    total_registros = len(datos)
-
-                    cruces = [
-                        ("Regulados", "CUM", "Valor UMD con Intermediacion sin decimales", "REGULACION"),
-                        ("NT", "Codigo", "Valor Referencia UMD", "NT"),
-                        ("PM", "CUM", "VMR UMD 2026", "PM"),
-                        ("Tarifario", "CUM", "VALOR", "REFERENCIA"),
-                        ("INVIMA", "CUM", "Estado Registro", "ESTADO REGISTRO")
-                    ]
-
-                    duplicados = datos.duplicated(subset="CODIGO", keep=False)
-                    datos["DUPLICADO"] = ""
-                    datos.loc[duplicados, "DUPLICADO"] = "DUPLICADO"
-
-                    for hoja_ref, campo_cod, campo_valor, nombre in cruces:
-                        datos, coincidencias = cruzar_referencia(datos, hoja_ref, campo_cod, campo_valor, nombre)
-                        validaciones.append(f"✔ {nombre}: {coincidencias:,}")
-
-                    datos = construir_valor_objetivo(datos)
-                    datos = ordenar_columnas(datos)
-
-                    # Formato visual
-                    for col in ["VALOR OFERTADO", "VALOR OBJETIVO"]:
-                        if col in datos.columns:
-                            datos[col] = pd.to_numeric(datos[col], errors="coerce").map(
-                                lambda x: "" if pd.isna(x) else f"{x:,.0f}".replace(",", ".")
-                            )
-
-                    for col in ["REGULACION", "NT", "REFERENCIA", "PM"]:
-                        if col in datos.columns:
-                            datos[col] = pd.to_numeric(datos[col], errors="coerce").map(
-                                lambda x: "" if pd.isna(x) else str(int(x))
-                            )
-
-                    if "DESVIACION" in datos.columns:
-                        datos["DESVIACION"] = pd.to_numeric(datos["DESVIACION"], errors="coerce").map(
-                            lambda x: "" if pd.isna(x) else (
-                                f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                            )
-                        )
-
-                    def construir_kpis(df):
-                        kpis = {}
-                        for nombre, config in FILTROS_KPI.items():
-                            columna = config["columna"]
-                            serie = df[columna].fillna("").astype(str).str.upper().str.strip()
-                            kpis[nombre] = int(serie.isin(config["valores"]).sum())
-
-                        kpis["registros"] = len(df)
-                        cubiertos = df[["REGULACION", "NT", "PM", "REFERENCIA"]].notna().any(axis=1)
-                        kpis["cobertura"] = float(round(cubiertos.mean() * 100, 1))
-                        kpis["fecha"] = datetime.now().strftime("%d/%m/%Y")
-                        return kpis
-                    
-                    kpis = construir_kpis(datos)
-
-                    for campo in list(kpis.keys()):
-                        valor = kpis[campo]
-                        if isinstance(valor, (int, float)):
-                            if campo == "cobertura":
-                                kpis[campo] = f"{valor:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".") + "%"
-                            else:
-                                kpis[campo] = f"{valor:,.0f}".replace(",", ".")
-
-                    fin = time.perf_counter()
-                    tiempo_proceso = round(fin - inicio, 2)
-                    id_proceso = str(uuid.uuid4())
-
-                    cache_negociaciones[id_proceso] = {
-                        "datos": datos.copy(),
-                        "archivo": os.path.basename(ruta),
-                        "ruta": ruta,
-                        "hoja": hoja
-                    }
-                    session["id_proceso"] = id_proceso
-                    columnas = datos.columns.tolist() if datos is not None else []
-                    tabla = datos.to_dict(orient="records") if datos is not None else []
-
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            mensaje = "El archivo no pudo procesarse porque no cumple con la estructura esperada por SANEM."
-            archivo_valido = False
-            validaciones = [
-                "❌ El archivo es incompatible con SANEM.",
-                "Revise que contenga un Código CUM y un Valor Ofertado válidos."
-            ]
-            tabla = None
-            kpis = None
-            total_registros = 0
-
+    # 4. Determinar dinámicamente el estado visual del panel de control
     estado_panel = "inicio"
     if nombre_archivo:
         estado_panel = "archivo"
@@ -679,27 +523,16 @@ def negociacion():
         estado_panel = "hoja"
 
     if tiempo_proceso is not None:
-        tiempo_proceso = formatear_tiempo(tiempo_proceso) 
+        tiempo_proceso = formatear_tiempo(tiempo_proceso)
 
+    # 5. Datos por defecto del formulario de exportación (modal)
     datos_exportacion = session.get(
         "datos_exportacion",
         {
-            "identificacion_representante": "",
-            "nombre_representante": "",
-            "nit": "",
-            "proveedor": "",
-            "ciudad": "",
-            "sucursal": "",
-            "codigo_sucursal": ""
+            "identificacion_representante": "", "nombre_representante": "", "nit": "",
+            "proveedor": "", "ciudad": "", "sucursal": "", "codigo_sucursal": ""
         }
     )
-
-    if not columnas:
-        columnas = [
-            "CODIGO", "DESCRIPCION", "VALOR OFERTADO", "REGULACION",
-            "NT", "REFERENCIA", "PM", "VALOR OBJETIVO", "VALIDACION",
-            "ESTADO REGISTRO", "DUPLICADO", "ORIGEN", "DESVIACION"
-        ]
 
     return render_template(
         "negociacion/negociacion.html",
@@ -711,7 +544,7 @@ def negociacion():
         archivo_valido=archivo_valido,
         hoja_seleccionada=hoja_seleccionada,
         archivo_nombre=nombre_archivo,
-        id_cache=session.get("id_proceso", ""),
+        id_cache=id_proceso,
         estado_panel=estado_panel,
         kpis=kpis,
         columnas=columnas,
@@ -720,6 +553,214 @@ def negociacion():
         tiempo_proceso=tiempo_proceso,
         datos_exportacion=datos_exportacion
     )
+
+@app.route('/negociacion', methods=['POST'], endpoint='negociacion_procesar')
+def negociacion_post():
+    content_type = request.content_type or ""
+    
+    # --------------------------------------------------------------------------
+    # CASO 1: CARGA INICIAL DEL ARCHIVO EXCEL
+    # --------------------------------------------------------------------------
+    if content_type.startswith("multipart/form-data") and "archivo" in request.files:
+        archivo = request.files.get("archivo")
+        
+        if archivo and archivo.filename != "":
+            # Validación física para detectar accesos directos de nubes o archivos vacíos
+            archivo.seek(0, os.SEEK_END)
+            tamano_archivo = archivo.tell()
+            archivo.seek(0)
+
+            if tamano_archivo == 0:
+                msg = "❌ El archivo está vacío o es un acceso directo virtual de la nube. Por favor, descárgalo físicamente."
+                return redirect(url_for('negociacion_get', mensaje=msg))
+
+            try:
+                ruta = guardar_archivo(archivo, UPLOAD_FOLDER)
+                hojas = obtener_hojas_excel(ruta)
+                nombre_archivo = obtener_nombre_archivo(ruta)
+
+                # Persistir metadatos del archivo en la sesión
+                session["ruta_archivo"] = ruta
+                session["hojas_excel"] = hojas
+                session["archivo_nombre"] = nombre_archivo
+                
+                # Resetear estados de procesos previos al cargar un nuevo libro
+                session["hoja_seleccionada"] = ""
+                session["id_proceso"] = ""
+                session["kpis"] = None
+                session["tiempo_proceso"] = None
+                
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                return redirect(url_for('negociacion_get', mensaje="Error físico guardando el documento de Excel."))
+
+        return redirect(url_for('negociacion'))
+
+    # --------------------------------------------------------------------------
+    # CASO 2: PROCESAMIENTO DE LA HOJA SELECCIONADA (LÓGICA PANDAS)
+    # --------------------------------------------------------------------------
+    if "hoja" in request.form:
+        inicio_tiempo = time.perf_counter()
+        ruta = request.form.get("archivo")
+        hoja = request.form.get("hoja")
+        
+        if not ruta or not os.path.exists(ruta):
+            return redirect(url_for('negociacion_get', mensaje="❌ La ruta del archivo expiró o no se encuentra en el servidor."))
+
+        # Re-obtener datos estructurales del archivo
+        hojas = obtener_hojas_excel(ruta)
+        nombre_archivo = obtener_nombre_archivo(ruta)
+        session["hoja_seleccionada"] = hoja
+
+        validaciones = []
+
+        try:
+            datos, fila_encabezado = encontrar_encabezado(ruta, hoja)
+            
+            if datos is None:
+                session["validaciones_flash"] = ["❌ No se encontraron encabezados válidos."]
+                return redirect(url_for('negociacion_get'))
+            
+            if datos.empty:
+                session["validaciones_flash"] = ["❌ La hoja no contiene registros."]
+                return redirect(url_for('negociacion_get'))
+                
+            if datos.shape[1] < 3:
+                session["validaciones_flash"] = ["❌ La hoja debe tener mínimo 3 columnas."]
+                return redirect(url_for('negociacion_get'))
+
+            # Limpieza estándar de columnas del DataFrame
+            datos.columns = [str(col).strip().upper() for col in datos.columns]
+            datos = datos.dropna(axis=1, how="all")
+            datos = datos.loc[:, ~datos.columns.astype(str).str.contains("^Unnamed", case=False, na=False)]
+            columnas = list(datos.columns)
+
+            # Forzar mapeo de las 3 columnas obligatorias
+            datos.rename(
+                columns={
+                    columnas[0]: "CODIGO",
+                    columnas[1]: "DESCRIPCION",
+                    columnas[2]: "VALOR OFERTADO"
+                },
+                inplace=True
+            )
+
+            # Validación de tipo numérico en la columna crítica
+            valor_num = pd.to_numeric(datos["VALOR OFERTADO"], errors="coerce")
+            if valor_num.notna().mean() < 0.80:
+                session["validaciones_flash"] = ["❌ La tercera columna no contiene un porcentaje suficiente de valores numéricos válidos."]
+                return redirect(url_for('negociacion_get'))
+
+            # Sanitización de filas vacías
+            datos.dropna(how="all", inplace=True)
+            for col in ["CODIGO", "DESCRIPCION"]:
+                datos[col] = datos[col].fillna("").astype(str).str.strip()
+            datos = datos[~((datos["CODIGO"] == "") & (datos["DESCRIPCION"] == ""))]
+            datos.reset_index(drop=True, inplace=True)
+
+            validaciones.append(f"✔ Encabezados encontrados en fila: {fila_encabezado}")
+            validaciones.append(f"✔ Registros encontrados: {len(datos):,}")
+            validaciones.append(f"✔ Columnas encontradas: {datos.shape[1]}")
+
+            # --- Fase de Cruces de Información SQL de Referencia ---
+            cruces = [
+                ("Regulados", "CUM", "Valor UMD con Intermediacion sin decimales", "REGULACION"),
+                ("NT", "Codigo", "Valor Referencia UMD", "NT"),
+                ("PM", "CUM", "VMR UMD 2026", "PM"),
+                ("Tarifario", "CUM", "VALOR", "REFERENCIA"),
+                ("INVIMA", "CUM", "Estado Registro", "ESTADO REGISTRO")
+            ]
+
+            # Detección interna de registros duplicados internos
+            duplicados = datos.duplicated(subset="CODIGO", keep=False)
+            datos["DUPLICADO"] = ""
+            datos.loc[duplicados, "DUPLICADO"] = "DUPLICADO"
+
+            for hoja_ref, campo_cod, campo_valor, nombre_res in cruces:
+                datos, coincidencias = cruzar_referencia(datos, hoja_ref, campo_cod, campo_valor, nombre_res)
+                validaciones.append(f"✔ {nombre_res}: {coincidencias:,}")
+
+            # Construcción lógica del valor objetivo comercial
+            datos = construir_valor_objetivo(datos)
+            datos = ordenar_columnas(datos)
+
+            # --- Formateo Visual de Variables de Salida ---
+            for col in ["VALOR OFERTADO", "VALOR OBJETIVO"]:
+                if col in datos.columns:
+                    datos[col] = pd.to_numeric(datos[col], errors="coerce").map(
+                        lambda x: "" if pd.isna(x) else f"{x:,.0f}".replace(",", ".")
+                    )
+
+            for col in ["REGULACION", "NT", "REFERENCIA", "PM"]:
+                if col in datos.columns:
+                    datos[col] = pd.to_numeric(datos[col], errors="coerce").map(
+                        lambda x: "" if pd.isna(x) else str(int(x))
+                    )
+
+            if "DESVIACION" in datos.columns:
+                datos["DESVIACION"] = pd.to_numeric(datos["DESVIACION"], errors="coerce").map(
+                    lambda x: "" if pd.isna(x) else (
+                        f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                    )
+                )
+
+            # --- Construcción Dinámica del Diccionario KPI ---
+            def construir_kpis(df):
+                kpis_locales = {}
+                for key_nombre, config in FILTROS_KPI.items():
+                    col_busqueda = config["columna"]
+                    serie = df[col_busqueda].fillna("").astype(str).str.upper().str.strip()
+                    kpis_locales[key_nombre] = int(serie.isin(config["valores"]).sum())
+
+                kpis_locales["registros"] = len(df)
+                cubiertos = df[["REGULACION", "NT", "PM", "REFERENCIA"]].notna().any(axis=1)
+                kpis_locales["cobertura"] = float(round(cubiertos.mean() * 100, 1))
+                kpis_locales["fecha"] = datetime.now().strftime("%d/%m/%Y")
+                return kpis_locales
+
+            kpis = construir_kpis(datos)
+
+            # Convertir los números de los KPIs a Strings legibles para el frontend
+            for campo in list(kpis.keys()):
+                valor_kpi = kpis[campo]
+                if isinstance(valor_kpi, (int, float)):
+                    if campo == "cobertura":
+                        kpis[campo] = f"{valor_kpi:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".") + "%"
+                    else:
+                        kpis[campo] = f"{valor_kpi:,.0f}".replace(",", ".")
+
+            session["kpis"] = kpis
+
+            # --- Guardado Seguro de Estado de Ejecución ---
+            fin_tiempo = time.perf_counter()
+            session["tiempo_proceso"] = round(fin_tiempo - inicio_tiempo, 2)
+            
+            id_proceso = str(uuid.uuid4())
+            cache_negociaciones[id_proceso] = {
+                "datos": datos.copy(),
+                "archivo": os.path.basename(ruta),
+                "ruta": ruta,
+                "hoja": hoja
+            }
+            session["id_proceso"] = id_proceso
+            session["validaciones_flash"] = validaciones
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            session["id_proceso"] = ""
+            session["kpis"] = None
+            session["tiempo_proceso"] = None
+            session["validaciones_flash"] = [
+                "❌ El archivo es incompatible con SANEM.",
+                "Revise que contenga un Código CUM y un Valor Ofertado válidos."
+            ]
+            return redirect(url_for('negociacion', mensaje="El archivo no pudo procesarse porque no cumple con la estructura esperada por SANEM."))
+
+        return redirect(url_for('negociacion'))
+
+    return redirect(url_for('negociacion'))
 
 def construir_valor_objetivo(datos):
 

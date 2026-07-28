@@ -28,7 +28,9 @@
             </div>
         </div>
 
+        <!-- SOLUCIÓN: Agregamos el action apuntando al endpoint de procesamiento POST -->
         <form
+            action="{{ url_for('negociacion_procesar') }}"
             method="POST"
             enctype="multipart/form-data"
             class="form-cambiar">

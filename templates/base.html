@@ -41,19 +41,19 @@
 
     {% endblock %}
 
+    <!-- 1. PRIMERO LAS LIBRERÍAS EXTERNAS BASE -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-    <script src="{{ url_for('static', filename='js/negociacion.js') }}"></script>
-
-    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
-
-    <!-- Vinculación del archivo JS externo con Flask -->
-    <script src="{{ url_for('static', filename='js/referencia.js') }}"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- 2. SEGUNDO TUS ENLACES DE MENSAJES PROPIOS (Para que Mensajes esté disponible globalmente) -->
     <script src="{{ url_for('static', filename='js/mensajes.js') }}"></script>
 
+    <!-- 3. TERCERO TUS SCRIPTS OPERATIVOS LOCALES -->
+    <script src="{{ url_for('static', filename='js/negociacion.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/referencia.js') }}"></script>
+
+    <!-- 4. AL FINAL LOS BLOQUES INYECTADOS POR LAS PÁGINAS HIJAS -->
     {% block scripts %}
 
     {% endblock %}
@@ -61,5 +61,4 @@
     {% include 'components/footer.html' %}
 
 </body>
-
 </html>
