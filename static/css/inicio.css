@@ -63,3 +63,75 @@
   margin-top: auto;           /* Empuja la imagen al fondo */
   margin-bottom: auto;        /* Centra la imagen verticalmente en el espacio disponible */
 }
+
+/* ==============================================================================
+   BLOQUE EXCLUSIVO PARA EL MENÚ DE INICIO (No afecta a las demás páginas)
+   ============================================================================== */
+
+/* Usamos un selector compuesto para que la columna vertical solo aplique en móviles */
+.botones-menu.pagina-inicio-container {
+    display: flex;
+    flex-direction: column;    
+    justify-content: stretch;  
+    gap: 12px;                 
+    padding: 16px;             
+    width: 100%;
+    box-sizing: border-box;
+    height: calc(100vh - 160px); /* Alto dinámico solo en el dashboard principal */
+    overflow: hidden;
+}
+
+/* Modificamos los botones del menú de inicio usando herencia estricta */
+.botones-menu.pagina-inicio-container .btn-principal {
+    flex: 1;                   /* Cada tarjeta toma una tercera parte exacta */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;   
+    align-items: center;
+    padding: 12px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-size: 1.8rem;         
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    box-sizing: border-box;
+    width: 100%;
+    min-height: auto;          /* Rompe el mínimo heredado solo en celular */
+}
+
+/* Reducción controlada del ícono del menú de inicio */
+.botones-menu.pagina-inicio-container .btn-icono {
+    width: 100px;               
+    height: 100px;              
+    object-fit: contain;
+    margin-top: 8px;           
+    margin-bottom: 0;
+}
+
+/* ==============================================================================
+   DISEÑO PARA COMPUTADORAS (Restaura tus estilos de PC)
+   ============================================================================== */
+@media (min-width: 768px) {
+    .botones-menu.pagina-inicio-container {
+        flex-direction: row;       
+        min-height: auto;          
+        height: auto;
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .botones-menu.pagina-inicio-container .btn-principal {
+        min-height: 560px;         
+        height: 100%;
+        justify-content: space-between;
+        padding: 24px;
+        font-size: 3rem;           
+    }
+
+    .botones-menu.pagina-inicio-container .btn-icono {
+        width: 210px;              
+        height: 210px;              
+        margin-top: auto;          
+        margin-bottom: auto;       
+    }
+}
