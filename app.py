@@ -79,213 +79,108 @@ def detalle(cum):
         es_modal=es_modal
     )
 
+# ==============================================================================
+# VARIABLE GLOBAL EN RAM PARA ALTA VELOCIDAD
+# ==============================================================================
 LISTA_REGIONALES_ESTATICA = ["NACIONAL", "CENTRO ORIENTE", "BUCARAMANGA", "BOGOTA", "MEDELLIN", "BARRANQUILLA", "CALI"]
 
+# ==============================================================================
+# VISTA OPERATIVA DE CONSULTA DE REFERENCIA (CORREGIDA SINTAXIS)
+# ==============================================================================
 @app.route("/referencia", methods=["GET", "POST"])
 def referencia():
-
     resultados = []
     detalle = None
-    medicamento=None
+    medicamento = None
     filtro = ""
 
-    pagina = int(
-        request.args.get(
-            "pagina",
-            1
-        )
-    )
-
+    pagina = int(request.args.get("pagina", 1))
     registros_por_pagina = 15
-
     total_paginas = 1
     total_registros = 0
-
-    registros_por_pagina = 15
 
     titulo_principal = "Valor Referencia"
     acto_administrativo = "NA"
     valor_normativo = "NA"
 
+    # 1. CAPTURA Y PROCESAMIENTO DE FILTROS (Unificado como 'tipo_filtro')
     if request.method == "POST":
-
-        tipo_filtro = request.form.get(
-            "tipo_filtro",
-            "CUM"
-        )
-
+        tipo_filtro = request.form.get("tipo_filtro", "CUM")
         if tipo_filtro == "REGIONAL":
-
-            filtro = request.form.get(
-                "regional",
-                ""
-            )
-
+            filtro = request.form.get("regional", "")
         else:
-
-            filtro = request.form.get(
-                "filtro",
-                ""
-            )
-
+            filtro = request.form.get("filtro", "")
     else:
-
-        tipo_filtro = request.args.get(
-            "tipo_filtro",
-            "CUM"
-        )
-
+        tipo_filtro = request.args.get("tipo_filtro", "CUM")
         if tipo_filtro == "REGIONAL":
-
-            filtro = request.args.get(
-                "regional",
-                request.args.get("filtro", "")
-            )
-
+            filtro = request.args.get("regional", request.args.get("filtro", ""))
         else:
+            filtro = request.args.get("filtro", "").strip()
 
-            filtro = request.args.get(
-                "filtro",
-                ""
-            ).strip()
-
+    # 2. EJECUCIÓN DE BÚSQUEDA VECTORIZADA
     if filtro:
+        resultados_completos = data_manager.buscar_medicamentos(filtro, tipo_filtro)
+        total_registros = len(resultados_completos)
+        total_paginas = max(1, math.ceil(total_registros / registros_por_pagina))
 
-        resultados_completos = data_manager.buscar_medicamentos(
-            filtro,
-            tipo_filtro
-        )
-
-        total_registros = len(
-            resultados_completos
-        )
-
-        total_paginas = max(
-            1,
-            math.ceil(
-                total_registros /
-                registros_por_pagina
-            )
-        )
-
-        inicio = (
-            pagina - 1
-        ) * registros_por_pagina
-
+        inicio = (pagina - 1) * registros_por_pagina
         fin = inicio + registros_por_pagina
+        resultados = resultados_completos[inicio:fin]
 
-        resultados = resultados_completos[
-            inicio:fin
-        ]
-
-    codigo_seleccionado = request.args.get(
-        "codigo",
-        ""
-    ).strip()
-
+    # 3. EXTRAER RESUMEN DE DETALLES DE CUM SELECCIONADO
+    codigo_seleccionado = request.args.get("codigo", "").strip()
     if codigo_seleccionado:
-
-        detalle = data_manager.obtener_resumen(
-            codigo_seleccionado
-        )
-
+        detalle = data_manager.obtener_resumen(codigo_seleccionado)
+        
         if detalle:
-
-            for campo in [
-                "VALOR REFERENCIA",
-                "VALOR MAXIMO",
-                "VALOR MINIMO",
-                "VALOR PROMEDIO"
-            ]:
-
+            for campo in ["VALOR REFERENCIA", "VALOR MAXIMO", "VALOR MINIMO", "VALOR PROMEDIO"]:
                 valor = detalle.get(campo)
-
                 if pd.notna(valor):
+                    detalle[campo] = "$ {:,.0f}".format(float(valor)).replace(",", ".")
 
-                    detalle[campo] = (
-                        "$ {:,.0f}"
-                        .format(float(valor))
-                        .replace(",", ".")
-                    )
+            titulo_principal = "Valor Referencia"
+            acto_administrativo = "NA"
+            valor_normativo = "NA"
 
-        titulo_principal = "Valor Referencia"
-        acto_administrativo = "NA"
-        valor_normativo = "NA"
+            precio_regulacion = detalle.get("PRECIO REGULACION")
+            nota_tecnica = detalle.get("NOTA TECNICA")
 
-        precio_regulacion = detalle.get(
-            "PRECIO REGULACION"
-        )
+            # Casos normativos de visualización empresarial
+            if pd.notna(precio_regulacion):
+                titulo_principal = "Valor Regulación"
+                acto_administrativo = detalle.get("FUENTE", "NA")
+                valor_normativo = precio_regulacion
+                if pd.notna(valor_normativo):
+                    valor_normativo = "$ {:,.0f}".format(float(valor_normativo)).replace(",", ".")
 
-        nota_tecnica = detalle.get(
-            "NOTA TECNICA"
-        )
+            elif pd.notna(nota_tecnica):
+                acto_administrativo = detalle.get("FUENTE", "NA")
+                valor_normativo = nota_tecnica
+                if pd.notna(valor_normativo):
+                    valor_normativo = "$ {:,.0f}".format(float(valor_normativo)).replace(",", ".")
 
-        # Caso 1 y 2
-        if pd.notna(precio_regulacion):
-
-            titulo_principal = "Valor Regulación"
-
-            acto_administrativo = detalle.get(
-                "FUENTE",
-                "NA"
-            )
-
-            valor_normativo = precio_regulacion
-
-            if pd.notna(valor_normativo):
-
-                valor_normativo = (
-                    "$ {:,.0f}"
-                    .format(float(valor_normativo))
-                    .replace(",", ".")
-                )
-
-        # Caso 3
-        elif pd.notna(nota_tecnica):
-
-            acto_administrativo = detalle.get(
-                "FUENTE",
-                "NA"
-            )
-
-            valor_normativo = nota_tecnica
-
-            if pd.notna(valor_normativo):
-
-                valor_normativo = (
-                    "$ {:,.0f}"
-                    .format(float(valor_normativo))
-                    .replace(",", ".")
-                )
-
-        # Caso 4
-        # Se dejan los valores por defecto
-
-        medicamento = detalle
-
-        filtro = filtro.strip()
+            medicamento = detalle
+            filtro = filtro.strip()
 
     if filtro == "":
-
         resultados = []
         detalle = None
         medicamento = None
-
         total_registros = 0
         total_paginas = 1
 
-    # CAMBIA POR ESTO (Respuesta en 0 milisegundos):
+    # 4. RETORNO LIMPIO HACIA JINJA2 (Corregidos 'tipo_filtro' y comas huérfanas)
     return render_template(
         "referencia/referencia.html",
         resultados=resultados,
         detalle=detalle,
         medicamento=medicamento,
         filtro=filtro,
-        tipo_filtro=tipo_filtro,
+        tipo_filtro=tipo_filtro,  # Enlaza perfecto con tu HTML y JavaScript
         titulo_principal=titulo_principal,
         acto_administrativo=acto_administrativo,
         valor_normativo=valor_normativo,
-        regionales=LISTA_REGIONALES_ESTATICA,
+        regionales=LISTA_REGIONALES_ESTATICA,  # Cache RAM instantánea
         pagina=pagina,
         total_paginas=total_paginas,
         total_registros=total_registros
