@@ -7,9 +7,22 @@ import math
 BASE_DIR = Path(__file__).parent
 RUTA_DB = BASE_DIR / "data" / "herramienta_negociacion.db"
 
-# ==============================================================
-# 1. BUSCADOR COMPLEMENTARIO DE MEDICAMENTOS (SQLite)
-# ==============================================================
+# ==============================================================================
+# CONEXIÓN GLOBAL PERSISTENTE (EVITA ABRIR Y CERRAR EL ARCHIVO CONSTANTEMENTE)
+# ==============================================================================
+_CONN_GLOBAL = sqlite3.connect(RUTA_DB, check_same_thread=False)
+
+# Ajustes PRAGMA nativos para que la base de datos opere directamente en la RAM
+_CUR_INIT = _CONN_GLOBAL.cursor()
+_CUR_INIT.execute("PRAGMA journal_mode = WAL;")
+_CUR_INIT.execute("PRAGMA synchronous = OFF;")
+_CUR_INIT.execute("PRAGMA cache_size = -20000;") # Reserva 20MB de memoria caché
+_CUR_INIT.execute("PRAGMA temp_store = MEMORY;")
+_CUR_INIT.close()
+
+# ==============================================================================
+# 1. BUSCADOR COMPLEMENTARIO DE MEDICAMENTOS (OPTIMIZADO)
+# ==============================================================================
 def buscar_medicamentos(filtro, tipo_filtro):
     mapa_filtros = {
         "CUM": "CÓDIGO",
@@ -20,90 +33,88 @@ def buscar_medicamentos(filtro, tipo_filtro):
     }
     
     columna_sql = mapa_filtros.get(tipo_filtro, "CÓDIGO")
+    cursor = _CONN_GLOBAL.cursor()
     
-    # 1. EVITAR ROW_FACTORY GLOBAL: Conexión limpia y directa por tuplas en C
-    conn = sqlite3.connect(RUTA_DB)
-    cursor = conn.cursor()
-    
-    # Consulta plana agrupada veloz
     query = f"""
     SELECT CÓDIGO, [DESCRIPCIÓN], [P. ACTIVO], [GRUPO TERAPEUTICO], NIT, REGIONAL, FUENTE, VALOR
     FROM referencia
     WHERE {columna_sql} LIKE ?
     GROUP BY CÓDIGO
     ORDER BY [DESCRIPCIÓN] ASC
-    LIMIT 200 -- LIMITANTE CLAVE: Evita colapsar la RAM si el filtro es muy genérico
+    LIMIT 200
     """
     cursor.execute(query, (f"%{filtro}%",))
     
-    # 2. MAPEO VECTORIZADO RÁPIDO (Mucho más eficiente que dict(row) en millones de filas)
     columnas = [col[0] for col in cursor.description]
     resultados = [dict(zip(columnas, row)) for row in cursor.fetchall()]
+    cursor.close()
     
-    conn.close()
     return resultados
 
-# ==============================================================
-# 2. OBTENER DETALLE O RESUMEN PARA CARGAS DINÁMICAS
-# ==============================================================
+# ==============================================================================
+# 2. OBTENER DETALLE O RESUMEN PARA CARGAS DINÁMICAS (CAMPOS EXPLÍCITOS)
+# ==============================================================================
 def obtener_resumen(codigo):
     if not codigo:
         return None
         
     codigo_str = str(codigo).strip()
+    cursor = _CONN_GLOBAL.cursor()
     
-    conn = sqlite3.connect(RUTA_DB)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    # OPTIMIZACIÓN: Seleccionamos los campos explícitos requeridos por tu app.py y las alertas
+    campos = "CÓDIGO, [DESCRIPCIÓN], [VALOR REFERENCIA], [VALOR MAXIMO], [VALOR MINIMO], [VALOR PROMEDIO], [PRECIO REGULACION], [NOTA TECNICA], FUENTE, AGRUPADOR, EXPEDIENTE"
     
-    # Intento 1: Buscar con el código completo tal cual viene (ej: '20023450-1')
-    cursor.execute("SELECT * FROM referencia WHERE CÓDIGO = ? LIMIT 1", (codigo_str,))
+    cursor.execute(f"SELECT {campos} FROM referencia WHERE CÓDIGO = ? LIMIT 1", (codigo_str,))
     fila = cursor.fetchone()
     
-    # Intento 2: Si no se encuentra y contiene un guion, busca por el prefijo base (ej: '20023450')
     if not fila and "-" in codigo_str:
         codigo_base = codigo_str.split("-")[0]
-        cursor.execute("SELECT * FROM referencia WHERE CÓDIGO = ? LIMIT 1", (codigo_base,))
+        cursor.execute(f"SELECT {campos} FROM referencia WHERE CÓDIGO = ? LIMIT 1", (codigo_base,))
         fila = cursor.fetchone()
         
-    conn.close()
-    
-    return dict(fila) if fila else None
+    if fila:
+        columnas = [col[0] for col in cursor.description]
+        resultado = dict(zip(columnas, fila))
+    else:
+        resultado = None
+        
+    cursor.close()
+    return resultado
 
-# ==============================================================
-# 3. DETALLE DE FACTURACIÓN
-# ==============================================================
+# ==============================================================================
+# 3. DETALLE DE FACTURACIÓN (OPTIMIZADO EN MEMORIA)
+# ==============================================================================
 def obtener_detalle_facturacion(codigo):
     cabecera = obtener_resumen(codigo)
+    if not cabecera:
+        return {"cabecera": None, "detalle": []}
 
     agrupador = str(cabecera.get("AGRUPADOR", "")).strip()
     expediente = str(cabecera.get("EXPEDIENTE", "")).strip()
+    cursor = _CONN_GLOBAL.cursor()
 
-    conn = sqlite3.connect(RUTA_DB)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    campos_query = "NIT, OPERADOR, REGIONAL, CÓDIGO, EXPEDIENTE, AGRUPADOR, [DESCRIPCIÓN], CANTIDAD, VALOR, TOTAL, AÑO"
 
     if agrupador.upper() == "PENDIENTE" or not agrupador:
-        cursor.execute("""
-            SELECT
-                NIT, OPERADOR, REGIONAL, CÓDIGO, EXPEDIENTE, 
-                AGRUPADOR, DESCRIPCIÓN, CANTIDAD, VALOR, TOTAL, AÑO
+        cursor.execute(f"""
+            SELECT {campos_query}
             FROM referencia
             WHERE EXPEDIENTE = ? AND EXPEDIENTE IS NOT NULL AND EXPEDIENTE != ''
             ORDER BY AÑO DESC, OPERADOR
+            LIMIT 500 -- Evita congelar el navegador inyectando demasiadas filas al modal HTML
         """, (expediente,))
     else:
-        cursor.execute("""
-            SELECT
-                NIT, OPERADOR, REGIONAL, CÓDIGO, EXPEDIENTE, 
-                AGRUPADOR, DESCRIPCIÓN, CANTIDAD, VALOR, TOTAL, AÑO
+        cursor.execute(f"""
+            SELECT {campos_query}
             FROM referencia
             WHERE AGRUPADOR = ?
             ORDER BY AÑO DESC, OPERADOR
+            LIMIT 500
         """, (agrupador,))
 
-    detalle = [dict(fila) for fila in cursor.fetchall()]
-    conn.close()
+    columnas = [col[0] for col in cursor.description]
+    detalle = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    cursor.close()
 
     return {
         "cabecera": cabecera,
@@ -111,7 +122,7 @@ def obtener_detalle_facturacion(codigo):
     }
 
 # ==============================================================================
-# 4. EXPORTADORES (Limpiado el duplicado que tenías al final)
+# 4. EXPORTADORES
 # ==============================================================================
 def generar_excel_negociacion(datos, encabezado, ruta_salida):
     from excel_exporter import generar_excel_negociacion as generar
