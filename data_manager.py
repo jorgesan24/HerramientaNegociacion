@@ -21,29 +21,26 @@ def buscar_medicamentos(filtro, tipo_filtro):
     
     columna_sql = mapa_filtros.get(tipo_filtro, "CÓDIGO")
     
+    # 1. EVITAR ROW_FACTORY GLOBAL: Conexión limpia y directa por tuplas en C
     conn = sqlite3.connect(RUTA_DB)
-    conn.row_factory = sqlite3.Row  
     cursor = conn.cursor()
     
-    # SOLUCIÓN DE RENDIMIENTO: Consulta en una sola pasada indexada.
-    # El 'GROUP BY' colapsa los duplicados en caliente y 'MIN(rowid)' o la agregación 
-    # se ejecuta de forma directa sobre el índice físico, reduciendo el consumo de CPU.
+    # Consulta plana agrupada veloz
     query = f"""
-    SELECT *, MIN(rowid)
+    SELECT CÓDIGO, [DESCRIPCIÓN], [P. ACTIVO], [GRUPO TERAPEUTICO], NIT, REGIONAL, FUENTE, VALOR
     FROM referencia
     WHERE {columna_sql} LIKE ?
     GROUP BY CÓDIGO
     ORDER BY [DESCRIPCIÓN] ASC
+    LIMIT 200 -- LIMITANTE CLAVE: Evita colapsar la RAM si el filtro es muy genérico
     """
-    
-    # OPTIMIZACIÓN OPCIONAL DE ESCRITURA: 
-    # Si el usuario busca por CUM exacto, podrías quitar el % del inicio si tu lógica lo permite,
-    # lo cual haría que el índice funcione a velocidad instantánea (en microsegundos).
     cursor.execute(query, (f"%{filtro}%",))
     
-    resultados = [dict(row) for row in cursor.fetchall()]
-    conn.close()
+    # 2. MAPEO VECTORIZADO RÁPIDO (Mucho más eficiente que dict(row) en millones de filas)
+    columnas = [col[0] for col in cursor.description]
+    resultados = [dict(zip(columnas, row)) for row in cursor.fetchall()]
     
+    conn.close()
     return resultados
 
 # ==============================================================
@@ -113,41 +110,8 @@ def obtener_detalle_facturacion(codigo):
         "detalle": detalle
     }
 
-# ==============================================================
-# 4. LISTAR REGIONALES PARA EL COMBO DESPLEGABLE (LAZY LOADING)
-# ==============================================================
-
-_MEMORIA_REGIONALES_CACHE = []
-
-def obtener_regionales():
-    """
-    Retorna el listado de regionales de forma instantánea usando caché en RAM.
-    Solo lee la base de datos la primera vez que se enciende el aplicativo.
-    """
-    global _MEMORIA_REGIONALES_CACHE
-    
-    # Si la lista ya fue cargada previamente en la RAM, la retorna de inmediato
-    if _MEMORIA_REGIONALES_CACHE:
-        return _MEMORIA_REGIONALES_CACHE
-        
-    # ÚNICAMENTE SI ESTÁ VACÍA (Primera carga del servidor), consulta el disco:
-    print("SANEM: Precalculando índice de regionales en la memoria RAM...")
-    conn = sqlite3.connect(RUTA_DB)
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT DISTINCT REGIONAL 
-        FROM referencia 
-        WHERE REGIONAL IS NOT NULL AND REGIONAL != '' 
-        ORDER BY REGIONAL ASC
-    """)
-    
-    _MEMORIA_REGIONALES_CACHE = [row[0] for row in cursor.fetchall()]
-    conn.close()
-    
-    return _MEMORIA_REGIONALES_CACHE
-
 # ==============================================================================
-# 5. EXPORTADORES (Limpiado el duplicado que tenías al final)
+# 4. EXPORTADORES (Limpiado el duplicado que tenías al final)
 # ==============================================================================
 def generar_excel_negociacion(datos, encabezado, ruta_salida):
     from excel_exporter import generar_excel_negociacion as generar

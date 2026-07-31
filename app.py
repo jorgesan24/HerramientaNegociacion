@@ -79,21 +79,7 @@ def detalle(cum):
         es_modal=es_modal
     )
 
-LISTA_REGIONALES_ESTATICA = []
-
-@app.before_request
-def cargar_regionales_en_primer_click():
-    # CLAVE DE SOLUCIÓN: Declaramos primero que usaremos la variable global
-    global LISTA_REGIONALES_ESTATICA
-    
-    # Ahora sí, Python la reconocerá perfectamente sin lanzar el NameError
-    if not LISTA_REGIONALES_ESTATICA:
-        try:
-            print("SANEM: Hilo activo detectado. Cargando regionales en caché diferida...")
-            LISTA_REGIONALES_ESTATICA = data_manager.obtener_regionales()
-        except Exception as e:
-            print(f"Error cargando regionales de contingencia: {e}")
-            LISTA_REGIONALES_ESTATICA = []
+LISTA_REGIONALES_ESTATICA = ["NACIONAL", "CENTRO ORIENTE", "BUCARAMANGA", "BOGOTA", "MEDELLIN", "BARRANQUILLA", "CALI"]
 
 @app.route("/referencia", methods=["GET", "POST"])
 def referencia():
@@ -295,16 +281,15 @@ def referencia():
         detalle=detalle,
         medicamento=medicamento,
         filtro=filtro,
-        tipo_filter=tipo_filtro,
+        tipo_filtro=tipo_filtro,
         titulo_principal=titulo_principal,
         acto_administrativo=acto_administrativo,
         valor_normativo=valor_normativo,
-        LISTA_REGIONALES_ESTATICA = [],
+        regionales=LISTA_REGIONALES_ESTATICA,
         pagina=pagina,
         total_paginas=total_paginas,
         total_registros=total_registros
     )
-
 
 def encontrar_encabezado(ruta, hoja):
     
@@ -1115,7 +1100,3 @@ if __name__ == "__main__":
     inicializar_bd()
     
     app.run(debug=True, use_reloader=False)
-
-    # Carga las regionales una sola vez en la memoria RAM principal de Flask al encender
-    print("SANEM: Inyectando regionales en la RAM del hilo principal...")
-    LISTA_REGIONALES_ESTATICA = data_manager.obtener_regionales()
