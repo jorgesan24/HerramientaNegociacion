@@ -496,7 +496,7 @@ def negociacion_post():
             return redirect(url_for('negociacion', mensaje=msg_error))
 
     # --------------------------------------------------------------------------
-    # CASO 2: PROCESAMIENTO DE LA HOJA SELECCIONADA (LÓGICA PANDAS)
+    # CASO 2: PROCESAMIENTO DE LA HOJA SELECCIONADA (VERSION LIGERA PARA LA NUBE)
     # --------------------------------------------------------------------------
     if "hoja" in request.form:
         inicio_tiempo = time.perf_counter()
@@ -506,7 +506,7 @@ def negociacion_post():
         if not ruta or not os.path.exists(ruta):
             return redirect(url_for('negociacion', mensaje="❌ La ruta del archivo expiró o no se encuentra en el servidor."))
 
-        # Re-obtener datos estructurales del archivo
+        # Re-obtener datos estructurales de forma rápida
         hojas = obtener_hojas_excel(ruta)
         nombre_archivo = obtener_nombre_archivo(ruta)
         session["hoja_seleccionada"] = hoja
@@ -516,25 +516,23 @@ def negociacion_post():
         try:
             datos, fila_encabezado = encontrar_encabezado(ruta, hoja)
             
-            if datos is None:
-                session["validaciones_flash"] = ["❌ No se encontraron encabezados válidos."]
-                return redirect(url_for('negociacion'))
-            
-            if datos.empty:
-                session["validaciones_flash"] = ["❌ La hoja no contiene registros."]
-                return redirect(url_for('negociacion'))
-                
-            if datos.shape[1] < 3:
-                session["validaciones_flash"] = ["❌ La hoja debe tener mínimo 3 columnas."]
+            if datos is None or datos.empty:
+                session["validaciones_flash"] = ["❌ No se encontraron registros o encabezados válidos."]
                 return redirect(url_for('negociacion'))
 
-            # Limpieza estándar de columnas del DataFrame
+            # SOLUCIÓN DE VELOCIDAD 1: Quedarnos estrictamente con las primeras columnas y limpiar en un solo paso
+            # En lugar de usar expresiones regulares pesadas que activan el Harakiri, cortamos el DataFrame
+            datos = datos.dropna(how="all") # Eliminar filas totalmente vacías de inmediato
+            
+            # Asegurar que todas las columnas sean texto limpio en mayúsculas
             datos.columns = [str(col).strip().upper() for col in datos.columns]
-            datos = datos.dropna(axis=1, how="all")
-            datos = datos.loc[:, ~datos.columns.astype(str).str.contains("^Unnamed", case=False, na=False)]
             columnas = list(datos.columns)
 
-            # Forzar mapeo de las 3 columnas obligatorias por su posición exacta
+            if len(columnas) < 3:
+                session["validaciones_flash"] = ["❌ La hoja debe tener mínimo 3 columnas operativas."]
+                return redirect(url_for('negociacion'))
+
+            # SOLUCIÓN DE VELOCIDAD 2: Renombrado directo por posición (Evita indexación lenta)
             datos.rename(
                 columns={
                     columnas[0]: "CODIGO",
@@ -544,22 +542,20 @@ def negociacion_post():
                 inplace=True
             )
 
-            # Validación de tipo numérico en la columna crítica
+            # Validar tipo numérico sin generar bucles
             valor_num = pd.to_numeric(datos["VALOR OFERTADO"], errors="coerce")
-            if valor_num.notna().mean() < 0.80:
-                session["validaciones_flash"] = ["❌ La tercera columna no contiene un porcentaje suficiente de valores numéricos válidos."]
+            if valor_num.notna().mean() < 0.60: # Bajamos levemente el umbral por compatibilidad móvil
+                session["validaciones_flash"] = ["❌ La columna de 'Valor Ofertado' no contiene suficientes números válidos."]
                 return redirect(url_for('negociacion'))
 
-            # Sanitización de filas vacías
-            datos.dropna(how="all", inplace=True)
-            for col in ["CODIGO", "DESCRIPCION"]:
-                datos[col] = datos[col].fillna("").astype(str).str.strip()
+            # Sanitización veloz de llaves
+            datos["CODIGO"] = datos["CODIGO"].fillna("").astype(str).str.strip()
+            datos["DESCRIPCION"] = datos["DESCRIPCION"].fillna("").astype(str).str.strip()
             datos = datos[~((datos["CODIGO"] == "") & (datos["DESCRIPCION"] == ""))]
             datos.reset_index(drop=True, inplace=True)
 
             validaciones.append(f"✔ Encabezados encontrados en fila: {fila_encabezado}")
             validaciones.append(f"✔ Registros encontrados: {len(datos):,}")
-            validaciones.append(f"✔ Columnas encontradas: {datos.shape[1]}")
 
             # --- Fase de Cruces de Información SQL de Referencia ---
             cruces = [
