@@ -985,6 +985,8 @@ def inject_menu():
         endpoint_actual=request.endpoint
     )
 
+app = app
+
 if __name__ == "__main__":
     # La base de datos ahora se inicializa una sola vez al encender el servidor
     from negociaciones_repository import inicializar_bd
