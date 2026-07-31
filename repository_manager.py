@@ -56,67 +56,67 @@ def guardar_negociacion(encabezado, datos):
     negociacion_id = cur.lastrowid
 
     # ==========================================================================
-    # CORRECCIÓN CLAVE: BLINDAJE CONTRA DATAFRAMES DE PANDAS (Evita AttributeError)
+    # BLINDAJE CONTRA DATAFRAMES DE PANDAS
     # ==========================================================================
-    # Si 'datos' es un DataFrame de Pandas, lo convertimos a una lista de diccionarios reales.
-    # Si ya es un diccionario o lista de filas de la caché, se procesará directamente.
     if hasattr(datos, "to_dict"):
         registros_procesar = datos.to_dict(orient="records")
     else:
         registros_procesar = datos
 
-    # ==========================================
-    # Detalle histórico
-    # ==========================================
-    for fila in registros_procesar:
-        # Validación de seguridad por si se cuela un string huérfano
-        if isinstance(fila, str):
-            continue
-
-        cur.execute(
-            """
-            INSERT INTO negociacion_detalle
-            (
-                negociacion_id,
-                codigo,
-                descripcion,
-                valor_ofertado,
-                regulacion,
-                nt,
-                referencia,
-                pm,
-                valor_objetivo,
-                validacion,
-                estado_registro,
-                duplicado,
-                origen,
-                desviacion
-            )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """,
-            (
-                negociacion_id,
-                fila.get("CODIGO"),
-                fila.get("DESCRIPCION"),
-                fila.get("VALOR OFERTADO"),
-                fila.get("REGULACION"),
-                fila.get("NT"),
-                fila.get("REFERENCIA"),
-                fila.get("PM"),
-                fila.get("VALOR OBJETIVO"),
-                fila.get("VALIDACION"),
-                fila.get("ESTADO REGISTRO"),
-                fila.get("DUPLICADO"),
-                fila.get("ORIGEN"),
-                fila.get("DESVIACION"),
-            ),
+    # ==========================================================================
+    # OPTIMIZACIÓN 1: INSERCIÓN MASIVA VECTORIZADA (executemany)
+    # ==========================================================================
+    # Preparamos todas las tuplas de datos en memoria en un solo bloque rápido
+    tuplas_detalle = [
+        (
+            negociacion_id,
+            fila.get("CODIGO"),
+            fila.get("DESCRIPCION"),
+            fila.get("VALOR OFERTADO"),
+            fila.get("REGULACION"),
+            fila.get("NT"),
+            fila.get("REFERENCIA"),
+            fila.get("PM"),
+            fila.get("VALOR OBJETIVO"),
+            fila.get("VALIDACION"),
+            fila.get("ESTADO REGISTRO"),
+            fila.get("DUPLICADO"),
+            fila.get("ORIGEN"),
+            fila.get("DESVIACION")
         )
+        for fila in registros_procesar if not isinstance(fila, str)
+    ]
+
+    # Inyectamos miles de registros al disco en una sola operación atómica
+    cur.executemany(
+        """
+        INSERT INTO negociacion_detalle
+        (
+            negociacion_id,
+            codigo,
+            descripcion,
+            valor_ofertado,
+            regulacion,
+            nt,
+            referencia,
+            pm,
+            valor_objetivo,
+            validacion,
+            estado_registro,
+            duplicado,
+            origen,
+            desviacion
+        )
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        tuplas_detalle
+    )
 
     conn.commit()
 
-    # Sincroniza y actualiza la matriz en el maestro vigente pasándole la lista estructurada
-    actualizar_repositorio_vigente(
-        conn,
+    # Sincroniza y actualiza el repositorio maestro de forma masiva
+    actualizar_repositorio_vigente_masivo(
+        cur,
         nit_guardar,
         registros_procesar
     )
@@ -126,69 +126,74 @@ def guardar_negociacion(encabezado, datos):
 
     return consecutivo
 
-def actualizar_repositorio_vigente(conn, nit, registros_procesar):
-    cur = conn.cursor()
+
+def actualizar_repositorio_vigente_masivo(cur, nit, registros_procesar):
+    """
+    OPTIMIZACIÓN 2: Actualización por lotes usando executemany para ON CONFLICT.
+    """
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    for fila in registros_procesar:
-        if isinstance(fila, str):
-            continue
-
-        cur.execute(
-            """
-            INSERT INTO repositorio_vigente
-            (
-                nit,
-                codigo,
-                descripcion,
-                valor_ofertado,
-                regulacion,
-                nt,
-                referencia,
-                pm,
-                valor_objetivo,
-                validacion,
-                estado_registro,
-                duplicado,
-                origen,
-                desviacion,
-                fecha_actualizacion
-            )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            ON CONFLICT(nit, codigo)
-            DO UPDATE SET
-                descripcion=excluded.descripcion,
-                valor_ofertado=excluded.valor_ofertado,
-                regulacion=excluded.regulacion,
-                nt=excluded.nt,
-                referencia=excluded.referencia,
-                pm=excluded.pm,
-                valor_objetivo=excluded.valor_objetivo,
-                validacion=excluded.validacion,
-                estado_registro=excluded.estado_registro,
-                duplicado=excluded.duplicado,
-                origen=excluded.origen,
-                desviacion=excluded.desviacion,
-                fecha_actualizacion=excluded.fecha_actualizacion
-            """,
-            (
-                nit,
-                fila.get("CODIGO"),
-                fila.get("DESCRIPCION"),
-                fila.get("VALOR OFERTADO"),
-                fila.get("REGULACION"),
-                fila.get("NT"),
-                fila.get("REFERENCIA"),
-                fila.get("PM"),
-                fila.get("VALOR OBJETIVO"),
-                fila.get("VALIDACION"),
-                fila.get("ESTADO REGISTRO"),
-                fila.get("DUPLICADO"),
-                fila.get("ORIGEN"),
-                fila.get("DESVIACION"),
-                fecha,
-            ),
+    tuplas_vigente = [
+        (
+            nit,
+            fila.get("CODIGO"),
+            fila.get("DESCRIPCION"),
+            fila.get("VALOR OFERTADO"),
+            fila.get("REGULACION"),
+            fila.get("NT"),
+            fila.get("REFERENCIA"),
+            fila.get("PM"),
+            fila.get("VALOR OBJETIVO"),
+            fila.get("VALIDACION"),
+            fila.get("ESTADO REGISTRO"),
+            fila.get("DUPLICADO"),
+            fila.get("ORIGEN"),
+            fila.get("DESVIACION"),
+            fecha
         )
+        for fila in registros_procesar if not isinstance(fila, str)
+    ]
+
+    cur.executemany(
+        """
+        INSERT INTO repositorio_vigente
+        (
+            nit,
+            codigo,
+            descripcion,
+            valor_ofertado,
+            regulacion,
+            nt,
+            referencia,
+            pm,
+            valor_objetivo,
+            validacion,
+            estado_registro,
+            duplicado,
+            origen,
+            desviacion,
+            fecha_actualizacion
+        )
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(nit, codigo)
+        DO UPDATE SET
+            descripcion=excluded.descripcion,
+            valor_ofertado=excluded.valor_ofertado,
+            regulacion=excluded.regulacion,
+            nt=excluded.nt,
+            referencia=excluded.referencia,
+            pm=excluded.pm,
+            valor_objetivo=excluded.valor_objetivo,
+            validacion=excluded.validacion,
+            estado_registro=excluded.estado_registro,
+            duplicado=excluded.duplicado,
+            origen=excluded.origen,
+            desviacion=excluded.desviacion,
+            fecha_actualizacion=excluded.fecha_actualizacion
+        """,
+        tuplas_vigente
+    )
+
 
 def generar_consecutivo():
     """

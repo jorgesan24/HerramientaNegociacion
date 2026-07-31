@@ -52,8 +52,6 @@ app.secret_key = "TuClaveSuperSecreta"
 
 import tempfile
 
-inicializar_bd()
-
 # Definir una carpeta temporal dentro de tu propio proyecto
 dir_temporal = os.path.join(os.path.dirname(__file__), 'tmp_uploads')
 
@@ -1094,4 +1092,8 @@ def inject_menu():
     )
 
 if __name__ == "__main__":
+    # La base de datos ahora se inicializa una sola vez al encender el servidor
+    from negociaciones_repository import inicializar_bd
+    inicializar_bd()
+    
     app.run(debug=True, use_reloader=False)

@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 from openpyxl import load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 import pandas as pd
+import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parent
 RUTA_PLANTILLA = BASE_DIR / "data" / "plantilla_negociacion.xlsx"
@@ -98,23 +99,45 @@ def generar_excel_negociacion(datos, encabezado, ruta_salida):
     wb.save(ruta_salida)
     wb.close()
     
-    # 3. PROCESAMIENTO OPTIMIZADO (Bajo consumo de RAM)
+    # 3. PROCESAMIENTO ULTRA-RÁPIDO CON PANDAS (Vectorización masiva en RAM)
     columnas_ordenadas = [MAPEO_EXPORTACION[i] for i in sorted(MAPEO_EXPORTACION.keys())]
     df_filtrado = datos[columnas_ordenadas].copy()
     
-    # Usamos Pandas con el motor de openpyxl para volcar la tabla en bloque a partir de la fila 13
+    # Sanitización de datos a alta velocidad con Pandas antes de pasarlo a openpyxl
+    for col_name in df_filtrado.columns:
+        # Sanitizar columnas de dinero/precios
+        if "VALOR" in col_name or "PRECIO" in col_name or "REFERENCIA" in col_name or col_name in ["REGULACION", "NT", "PM"]:
+            if df_filtrado[col_name].dtype == object:
+                df_filtrado[col_name] = df_filtrado[col_name].astype(str).str.replace('$', '', regex=False)\
+                                                             .str.replace('.', '', regex=False)\
+                                                             .str.replace(',', '', regex=False).str.strip()
+            df_filtrado[col_name] = pd.to_numeric(df_filtrado[col_name], errors="coerce")
+            
+        # Sanitizar desviaciones o porcentajes
+        elif "DESVIACION" in col_name or "PORCENTAJE" in col_name:
+            if df_filtrado[col_name].dtype == object:
+                df_filtrado[col_name] = df_filtrado[col_name].astype(str).str.replace(',', '.', regex=False).str.strip()
+            df_filtrado[col_name] = pd.to_numeric(df_filtrado[col_name], errors="coerce")
+            
+        # Asegurar cadenas limpias para códigos o textos generales
+        else:
+            df_filtrado[col_name] = df_filtrado[col_name].fillna("").astype(str).str.strip()
+
+    # Reemplazar valores NaN numéricos por un string vacío compatible con Excel
+    df_filtrado = df_filtrado.replace({np.nan: None})
+
+    # Volcar el DataFrame sanitizado a la plantilla de forma atómica
     with pd.ExcelWriter(ruta_salida, mode="a", engine="openpyxl", if_sheet_exists="overlay") as writer:
         df_filtrado.to_excel(
             writer, 
             sheet_name=writer.sheets[ws.title].title, 
-            startrow=12,    # Fila 13 en Excel (indexado en 0)
+            startrow=12,    # Fila 13 en Excel
             startcol=0,     # Columna A
-            header=False,   # No sobreescribir con los nombres técnicos de columnas
-            index=False     # No agregar una columna de índices numéricos
+            header=False,   
+            index=False     
         )
     
-    # 4. APLICACIÓN DE FORMATOS Y ESTILOS DE POST-PROCESAMIENTO
-    # Volvemos a abrir el archivo generado para aplicar el diseño de celdas
+    # 4. APLICACIÓN DE ESTILOS RÁPIDOS EN BLOQUE (Cero procesos lógicos aquí)
     wb_final = load_workbook(ruta_salida)
     ws_final = wb_final.active
     
@@ -127,99 +150,66 @@ def generar_excel_negociacion(datos, encabezado, ruta_salida):
         
     return ruta_salida
 
-# ==============================================================================
-# FUNCIONES AUXILIARES DE ESTILIZADO DE DATOS (RECIÉN COMPLETADAS)
-# ==============================================================================
-
 def aplicar_formatos(ws):
     """
-    Recorre las celdas escritas por Pandas a partir de la fila 13 para aplicar
-    formatos de moneda, texto para CUM, alineaciones y bordes corporativos.
+    Aplica formatos estéticos de forma directa a la cuadrícula. 
+    Como los datos ya vienen numéricos y limpios desde Pandas, esta función vuela.
     """
-    fuente_datos = Font(name='Calibri', size=11, bold=False, color='000000')
-    
-    # Alineaciones estándar
+    fuente_datos = Font(name='Calibri', size=9, bold=False, color='000000')
     align_centro = Alignment(horizontal='center', vertical='center')
     align_izquierda = Alignment(horizontal='left', vertical='center')
     align_derecha = Alignment(horizontal='right', vertical='center')
     
-    # Bordes finos de color gris claro para delimitar las filas de datos
     borde_cuadrícula = Border(
-        left=Side(style='thin', color='D9D9D9'),
-        right=Side(style='thin', color='D9D9D9'),
-        top=Side(style='thin', color='D9D9D9'),
-        bottom=Side(style='thin', color='D9D9D9')
+        left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9')
     )
 
-    # Iterar sobre las filas de la tabla (Fila 13 en adelante)
     for r_idx in range(13, ws.max_row + 1):
-        ws.row_dimensions[r_idx].height = 20  # Altura cómoda de lectura por celda
+        ws.row_dimensions[r_idx].height = 20  
         
         for col_idx, col_name in MAPEO_EXPORTACION.items():
             cell = ws.cell(row=r_idx, column=col_idx)
             cell.font = fuente_datos
             cell.border = borde_cuadrícula
 
-            # 1. CASO CRÍTICO: Blindaje estricto de Códigos CUM (con guiones), NIT o IDs
+            # 1. Blindar CUM/NIT
             if col_name in ["CODIGO", "CUM", "NIT"]:
-                cell.number_format = '@'  # Fuerza a Excel a tratarlo como texto puro. Evita errores de guion
+                cell.number_format = '@'  
                 cell.alignment = align_centro
 
-            # 2. Caso Valores de Dinero / Moneda (Permite que sigan sumando en Excel nativo)
+            # 2. Formato Moneda
             elif "VALOR" in col_name or "PRECIO" in col_name or "REFERENCIA" in col_name or col_name in ["REGULACION", "NT", "PM"]:
-                try:
-                    if cell.value is not None and cell.value != "":
-                        # Limpiar caracteres basura si vienen formateados como texto antes de convertirlos a número real
-                        valor_limpio = str(cell.value).replace('$', '').replace('.', '').replace(',', '').strip()
-                        cell.value = float(valor_limpio)
-                except ValueError:
-                    pass
-                
-                cell.number_format = '$#,##0'  # Formato moneda sin decimales
+                cell.number_format = '$#,##0'  
                 cell.alignment = align_derecha
 
-            # 3. Caso Desviaciones o Porcentajes
+            # 3. Formato Decimales
             elif "DESVIACION" in col_name or "PORCENTAJE" in col_name:
-                try:
-                    if cell.value is not None and cell.value != "":
-                        valor_limpio = str(cell.value).replace(',', '.').strip()
-                        cell.value = float(valor_limpio)
-                except ValueError:
-                    pass
-                
-                cell.number_format = '#,##0.00'  # Formato decimal con dos posiciones precisas
+                cell.number_format = '#,##0.00'  
                 cell.alignment = align_derecha
 
-            # 4. Caso Textos Generales (DESCRIPCION, VALIDACION, ORIGEN)
+            # 4. Formato Texto General
             else:
                 cell.alignment = align_izquierda
 
 def ajustar_columnas(ws):
     """
-    Escanea las columnas de la hoja para darles un ancho proporcional dinámico,
-    evitando textos cortados o los molestos errores '###' de Excel.
+    Escanea las columnas utilizando los índices rápidos de tupla col[0]
+    optimizados para openpyxl moderno.
     """
     for col in ws.columns:
         max_len = 0
-        
-        # CORRECCIÓN: Obtenemos la letra de la columna usando la primera celda de la tupla (col[0])
         col_letter = get_column_letter(col[0].column)
         
-        # Analizar el largo de los textos a partir de la fila 12 (Títulos y datos)
-        # Esto evita que el ancho del encabezado superior deforme las columnas de abajo
         for cell in col:
             if cell.row >= 12:
                 val_str = str(cell.value or '')
                 if len(val_str) > max_len:
                     max_len = len(val_str)
         
-        # Asignar el ancho óptimo más un margen de seguridad de 4 caracteres
         ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
 
 def configurar_impresion(ws):
-    """
-    Configura la hoja de cálculo para que al imprimirla se ajuste de forma profesional.
-    """
     ws.sheet_properties.pageSetUpPr.fitToPage = True
-    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE # Horizontal para tablas anchas
-    ws.page_setup.paperSize = ws.PAPERSIZE_LETTER         # Tamaño Carta
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE 
+    ws.page_setup.paperSize = ws.PAPERSIZE_LETTER         
