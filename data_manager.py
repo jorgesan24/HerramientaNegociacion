@@ -8,17 +8,24 @@ BASE_DIR = Path(__file__).parent
 RUTA_DB = BASE_DIR / "data" / "herramienta_negociacion.db"
 
 # ==============================================================================
-# CONEXIÓN GLOBAL PERSISTENTE (EVITA ABRIR Y CERRAR EL ARCHIVO CONSTANTEMENTE)
+# CONEXIÓN COMPATIBLE CON VERCEL SERVERLESS (MODO SOLO LECTURA SEGURO)
 # ==============================================================================
-_CONN_GLOBAL = sqlite3.connect(RUTA_DB, check_same_thread=False)
+# Truco técnico: En Vercel pasamos la URI de solo lectura para evitar el crash 500
+try:
+    # Intenta abrir el archivo como una URI de lectura pura (Requerido por Vercel)
+    ruta_uri = f"file:{RUTA_DB}?mode=ro"
+    _CONN_GLOBAL = sqlite3.connect(ruta_uri, uri=True, check_same_thread=False)
+    
+    # Optimizaciones de pura lectura en RAM (Quitamos WAL y escrituras de disco)
+    _CUR_INIT = _CONN_GLOBAL.cursor()
+    _CUR_INIT.execute("PRAGMA cache_size = -20000;")  # 20MB de caché RAM para el buscador
+    _CUR_INIT.execute("PRAGMA temp_store = MEMORY;")  # Tablas de ordenamiento directo a la RAM
+    _CUR_INIT.close()
+    print("SANEM: Conexión persistente de solo lectura inicializada en la nube con éxito.")
 
-# Ajustes PRAGMA nativos para que la base de datos opere directamente en la RAM
-_CUR_INIT = _CONN_GLOBAL.cursor()
-_CUR_INIT.execute("PRAGMA journal_mode = WAL;")
-_CUR_INIT.execute("PRAGMA synchronous = OFF;")
-_CUR_INIT.execute("PRAGMA cache_size = -20000;") # Reserva 20MB de memoria caché
-_CUR_INIT.execute("PRAGMA temp_store = MEMORY;")
-_CUR_INIT.close()
+except sqlite3.OperationalError:
+    # Fallback de respaldo por si lo pruebas localmente en Windows y no reconoce la URI
+    _CONN_GLOBAL = sqlite3.connect(RUTA_DB, check_same_thread=False)
 
 # ==============================================================================
 # 1. BUSCADOR COMPLEMENTARIO DE MEDICAMENTOS (OPTIMIZADO)
