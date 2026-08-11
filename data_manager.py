@@ -42,8 +42,21 @@ def buscar_medicamentos(filtro, tipo_filtro):
     columna_sql = mapa_filtros.get(tipo_filtro, "CÓDIGO")
     cursor = _CONN_GLOBAL.cursor()
     
+    # Agregamos MAX() a los campos de texto para forzar a SQLite a traer 
+    # el valor más completo disponible en lugar de celdas vacías o nulas.
     query = f"""
-    SELECT CÓDIGO, [DESCRIPCIÓN], [P. ACTIVO], [GRUPO TERAPEUTICO], NIT, REGIONAL, FUENTE, VALOR
+    SELECT 
+        CÓDIGO, 
+        MAX([DESCRIPCIÓN]) AS [DESCRIPCIÓN], 
+        MAX([P. ACTIVO]) AS [P. ACTIVO], 
+        MAX([GRUPO TERAPEUTICO]) AS [GRUPO TERAPEUTICO], 
+        MAX(NIT) AS NIT, 
+        MAX(REGIONAL) AS REGIONAL, 
+        MAX(FUENTE) AS FUENTE, 
+        MAX(VALOR) AS VALOR,
+        MAX([DESCRIPCIÓN INVIMA]) AS [DESCRIPCIÓN INVIMA],
+        MAX(COBERTURA) AS COBERTURA,
+        MAX([ESTADO INVIMA]) AS [ESTADO INVIMA]
     FROM referencia
     WHERE {columna_sql} LIKE ?
     GROUP BY CÓDIGO
