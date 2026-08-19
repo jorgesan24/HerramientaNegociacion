@@ -190,16 +190,16 @@ def encontrar_encabezado(ruta, hoja):
     
     def limpiar(valor):
         valor = str(valor)
-        valor = unicodedata.normalize("NFKD", valor) # Corregido NFKK a NFKD
+        valor = unicodedata.normalize("NFKD", valor)
         return valor.encode("ascii", "ignore").decode("utf-8").upper().strip()
 
-    # OPTIMIZACIÓN: Leer únicamente las primeras 20 filas usando calamine
+    # Leemos únicamente las primeras 20 filas para analizar la estructura
     df_preview = pd.read_excel(ruta, sheet_name=hoja, header=None, nrows=20, engine="calamine")
     
     fila_encontrada = None
     for i, fila in df_preview.iterrows():
         valores = [limpiar(x) for x in fila.tolist()]
-        tiene_codigo = any("CODIGO" in x or "CUM" in x for x in valores)
+        tiene_codigo = any("CODIGO" in x or "CUM" in x or "CUMS" in x for x in valores)
         tiene_descripcion = any("DESCRIP" in x for x in valores)
         tiene_valor = any("VALOR" in x or "PRECIO" in x for x in valores)
         
@@ -207,10 +207,22 @@ def encontrar_encabezado(ruta, hoja):
             fila_encontrada = i
             break
             
+    # --------------------------------------------------------------------------
+    # SOLUCIÓN DE FLEXIBILIDAD AUTOMÁTICA
+    # --------------------------------------------------------------------------
+    # Si no encontró ninguna fila con palabras clave exactas, buscamos la primera 
+    # fila del Excel que no esté completamente vacía para asumirla como el encabezado.
+    if fila_encontrada is None:
+        for i, fila in df_preview.iterrows():
+            if fila.dropna().any():  # Encuentra la primera fila con cualquier texto/número
+                fila_encontrada = i
+                break
+
+    # Si el archivo está absolutamente vacío en las primeras 20 filas, aborta de forma segura
     if fila_encontrada is None:
         return None, None
         
-    # Cargar los datos reales usando el motor optimizado
+    # Cargar los datos reales usando el motor optimizado desde la fila identificada
     datos = pd.read_excel(ruta, sheet_name=hoja, header=fila_encontrada, engine="calamine")
     return datos, fila_encontrada + 1
 
@@ -227,17 +239,38 @@ def normalizar_codigo(valor):
     return valor
 
 def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
-    from data_manager import RUTA_DB
+    # Importamos la conexión optimizada que ya creamos en data_manager
+    from data_manager import _CONN_GLOBAL
     
-    conn = sqlite3.connect(RUTA_DB)
     nombre_tabla = hoja.strip().lower().replace(" ", "_")
     
-    # SOLUCIÓN: Agregados corchetes [...] alrededor de las variables para proteger los espacios
-    query = f"SELECT [{campo_codigo}], [{campo_valor}] FROM {nombre_tabla}"
+    # --- OPTIMIZACIÓN 1: FILTRADO QUERYS EN ORIGEN ---
+    # Extraemos los códigos únicos del Excel del usuario para pedirle a SQLite solo lo necesario
+    codigos_usuario = datos["CODIGO"].dropna().unique().tolist()
     
-    tabla = pd.read_sql_query(query, conn)
-    conn.close()
+    if not codigos_usuario:
+        datos[nombre_resultado] = ""
+        return datos, 0
+
+    # Construimos los marcadores dinámicos (?, ?, ?) para la cláusula IN
+    placeholders = ",".join(["?"] * len(codigos_usuario))
     
+    # Protegemos los nombres de columnas con corchetes
+    query = f"""
+        SELECT [{campo_codigo}], [{campo_valor}] 
+        FROM {nombre_tabla} 
+        WHERE [{campo_codigo}] IN ({placeholders})
+    """
+    
+    # --- OPTIMIZACIÓN 2: LEER DESDE LA CONEXIÓN GLOBAL PERSISTENTE ---
+    # Pasamos los códigos como parámetros seguros. Esto tarda milisegundos.
+    tabla = pd.read_sql_query(query, _CONN_GLOBAL, params=codigos_usuario)
+    
+    # Aseguramos limpieza y consistencia de llaves en la tabla de referencia
+    tabla[campo_codigo] = tabla[campo_codigo].fillna("").astype(str).str.strip()
+    tabla.drop_duplicates(subset=[campo_codigo], inplace=True)
+    
+    # --- CRUCE VECTORIZADO EN RAM ---
     datos = datos.merge(
         tabla,
         left_on="CODIGO",
@@ -246,49 +279,18 @@ def cruzar_referencia(datos, hoja, campo_codigo, campo_valor, nombre_resultado):
         suffixes=("", "_REF")
     )
 
-    columna_merge = campo_valor
-
-    if columna_merge in datos.columns:
-
-        datos.rename(
-            columns={
-                columna_merge: nombre_resultado
-            },
-            inplace=True
-        )
-
-    # Si existe una columna duplicada del merge
+    # Resolución limpia de nombres de columnas
+    if campo_valor in datos.columns:
+        datos.rename(columns={campo_valor: nombre_resultado}, inplace=True)
     if f"{campo_valor}_REF" in datos.columns:
+        datos.rename(columns={f"{campo_valor}_REF": nombre_resultado}, inplace=True)
 
-        datos.rename(
-            columns={
-                f"{campo_valor}_REF": nombre_resultado
-            },
-            inplace=True
-        )
+    # Eliminar columna espejo del cruce para no duplicar espacio
+    datos.drop(columns=[campo_codigo], inplace=True, errors="ignore")
 
-    # Si no hubo conflicto de nombres
-    elif campo_valor in datos.columns:
-
-        datos.rename(
-            columns={
-                campo_valor: nombre_resultado
-            },
-            inplace=True
-        )
-
-    datos.drop(
-        columns=[campo_codigo],
-        inplace=True,
-        errors="ignore"
-    )
-
-    coincidencias = (
-        datos[nombre_resultado]
-        .notna()
-        .sum()
-    )
-
+    # Contar coincidencias reales
+    coincidencias = datos[nombre_resultado].notna().sum()
+    
     return datos, coincidencias
 
 def cargar_archivo_negociacion():
@@ -655,7 +657,6 @@ def negociacion_post():
         return redirect(url_for('negociacion'))
 
     return redirect(url_for('negociacion'))
-
 
 def construir_valor_objetivo(datos):
 
